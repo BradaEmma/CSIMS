@@ -10,6 +10,7 @@ class Guard extends Model
     use HasFactory;
 
     protected $fillable = [
+        'employee_id',
         'name',
         'phone',
         'national_id',
@@ -32,6 +33,12 @@ class Guard extends Model
     | Relationships
     |---------------------------------------
     */
+
+    // A guard is the guard-specific extension of an employee
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 
     // A guard belongs to a site (current assignment)
     public function site()
