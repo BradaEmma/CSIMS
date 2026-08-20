@@ -28,3 +28,24 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+# CSIMS local/database files
+backend/csims_backup.sql
+backend/temp_login.json
+
+# Accidental empty files
+backend/0
+backend/assignDoubleShift(1
+backend/count()
+backend/delete()
+backend/get()
+backend/group(function
+backend/resolve(1
+backend/timestamps()
+backend/toDateString()
+backend/unique(['guard_id'
+
+# CSIMS local and sensitive files
+backend/.env
+backend/temp_login.json
+backend/csims_backup.sql

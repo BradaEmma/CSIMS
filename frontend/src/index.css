@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors — from Cubs Security logo/website */
+  --color-primary: #7A1F2B;
+  --color-primary-dark: #550A12;
+  --color-primary-light: #9C3A47;
+
+  --color-cream: #FBF6EC;
+
+  /* Status colors — soft backgrounds + readable text, matching the mockup */
+  --color-success: #16A34A;
+  --color-success-bg: #DCFCE7;
+
+  --color-warning: #D97706;
+  --color-warning-bg: #FEF3C7;
+
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEE2E2;
+
+  --color-info: #2563EB;
+  --color-info-bg: #DBEAFE;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900;
+}
