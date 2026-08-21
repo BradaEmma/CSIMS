@@ -43,15 +43,14 @@ const navGroups = [
       { label: 'Reports', path: '/reports', icon: BarChart3 },
     ],
   },
-  { 
+  {
     label: 'HR',
     items: [
-      { label: 'Employees', path: '/employees', icon: IdCard },
+      { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin'] },
       { label: 'Departments', path: '/departments', icon: Landmark },
     ],
   },
   {
-
     label: 'Payroll & Finance',
     items: [
       { label: 'Payroll', path: '/payroll', icon: Wallet },
@@ -77,6 +76,16 @@ function getInitials(name) {
     .join('')
     .slice(0, 2)
     .toUpperCase()
+}
+
+// An item with no `roles` array is visible to everyone (unchanged default
+// behavior). An item WITH a `roles` array is only visible if the current
+// user has at least one matching role. This is intentionally generic so
+// future roles (hr, finance, technical, etc.) can be added to any item's
+// `roles` array later without touching this filtering logic.
+function isItemVisible(item, userRoles) {
+  if (!item.roles) return true
+  return item.roles.some((role) => userRoles.includes(role))
 }
 
 function AppLayout({ children, title, subtitle }) {
@@ -113,35 +122,40 @@ function AppLayout({ children, title, subtitle }) {
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {navGroups.map((group, gi) => (
-            <div key={gi} className={gi > 0 ? 'mt-5' : ''}>
-              {group.label && (
-                <p className="px-3 mb-1 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const isActive = location.pathname === item.path
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                        isActive
-                          ? 'bg-primary-dark text-white'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      <Icon size={17} strokeWidth={2} />
-                      {item.label}
-                    </Link>
-                  )
-                })}
+          {navGroups.map((group, gi) => {
+            const visibleItems = group.items.filter((item) => isItemVisible(item, roles))
+            if (visibleItems.length === 0) return null
+
+            return (
+              <div key={gi} className={gi > 0 ? 'mt-5' : ''}>
+                {group.label && (
+                  <p className="px-3 mb-1 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+                    {group.label}
+                  </p>
+                )}
+                <div className="space-y-1">
+                  {visibleItems.map((item) => {
+                    const isActive = location.pathname === item.path
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                          isActive
+                            ? 'bg-primary-dark text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Icon size={17} strokeWidth={2} />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
         <div className="px-4 py-4 border-t border-slate-200 flex items-center gap-3">

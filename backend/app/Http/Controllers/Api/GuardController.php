@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guard;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class GuardController extends Controller
 {
@@ -26,6 +28,12 @@ class GuardController extends Controller
     |---------------------------------------
     | CREATE GUARD
     | Admin ONLY
+    |
+    | Also creates the linked Employee record automatically, so every
+    | new guard has a proper universal identity from the start. Wrapped
+    | in a transaction so a failure on either insert leaves nothing
+    | orphaned. Existing guards created before this change are NOT
+    | affected/backfilled by this — that's a separate future task.
     |---------------------------------------
     */
     public function store(Request $request)
@@ -41,11 +49,23 @@ class GuardController extends Controller
             'paye_applicable' => 'nullable|boolean',
         ]);
 
-        $guard = Guard::create([
-            ...$validated,
-            'status' => 'active',
-            'created_by' => Auth::id(),
-        ]);
+        $guard = DB::transaction(function () use ($validated) {
+            $employee = Employee::create([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'national_id' => $validated['national_id'] ?? null,
+                'position' => 'Guard',
+                'status' => 'active',
+                'created_by' => Auth::id(),
+            ]);
+
+            return Guard::create([
+                ...$validated,
+                'status' => 'active',
+                'created_by' => Auth::id(),
+                'employee_id' => $employee->id,
+            ]);
+        });
 
         return response()->json([
             'message' => 'Guard created successfully',

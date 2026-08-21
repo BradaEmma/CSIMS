@@ -23,6 +23,9 @@ function Guards() {
   const [editingGuard, setEditingGuard] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
 
+  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
+  const canManage = roles.includes('admin')
+
   function loadGuards() {
     setLoading(true)
     apiGet('/guards')
@@ -80,12 +83,14 @@ function Guards() {
             <h2 className="text-sm font-bold text-slate-800">
               All Guards ({guards.length})
             </h2>
-            <button
-              onClick={openAddModal}
-              className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
-            >
-              + Add Guard
-            </button>
+            {canManage && (
+              <button
+                onClick={openAddModal}
+                className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
+              >
+                + Add Guard
+              </button>
+            )}
           </div>
 
           <table className="w-full text-sm">
@@ -97,7 +102,7 @@ function Guards() {
                 <th className="pb-2">Shift Preference</th>
                 <th className="pb-2">Site</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">Actions</th>
+                {canManage && <th className="pb-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -109,21 +114,23 @@ function Guards() {
                   <td className="py-2.5 text-slate-600 capitalize">{guard.shift_type}</td>
                   <td className="py-2.5 text-slate-600">{guard.site?.name || '—'}</td>
                   <td className="py-2.5"><StatusBadge status={guard.status} /></td>
-                  <td className="py-2.5">
-                    <button
-                      onClick={() => openEditModal(guard)}
-                      className="text-primary hover:underline text-xs font-medium mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(guard)}
-                      disabled={deletingId === guard.id}
-                      className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                    >
-                      {deletingId === guard.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="py-2.5">
+                      <button
+                        onClick={() => openEditModal(guard)}
+                        className="text-primary hover:underline text-xs font-medium mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(guard)}
+                        disabled={deletingId === guard.id}
+                        className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                      >
+                        {deletingId === guard.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -135,7 +142,7 @@ function Guards() {
         </div>
       )}
 
-      {modalOpen && (
+      {modalOpen && canManage && (
         <GuardModal
           guard={editingGuard}
           onClose={() => setModalOpen(false)}

@@ -263,9 +263,9 @@ Route::prefix('v1')->group(function () {
         | EMPLOYEES MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('employees')->group(function () {
+                Route::prefix('employees')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('role:admin')->group(function () {
                 Route::get('/',     [EmployeeController::class, 'index']);
                 Route::get('/{id}', [EmployeeController::class, 'show']);
             });
