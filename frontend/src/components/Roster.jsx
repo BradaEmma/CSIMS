@@ -28,7 +28,7 @@ function getWeekDates(startDate) {
 function Roster() {
   const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()))
   const [assignments, setAssignments] = useState([])
-  const [sites, setSites] = useState([])
+  const [posts, setPosts] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
@@ -47,7 +47,25 @@ function Roster() {
     ])
       .then(([rosterRes, sitesRes]) => {
         setAssignments(rosterRes.data || [])
-        setSites(Array.isArray(sitesRes) ? sitesRes.filter((s) => s.status === 'active') : [])
+
+        // Flatten active sites -> their active posts, keeping the parent
+        // site's name/id attached to each post row. A site with multiple
+        // posts now renders multiple row-pairs, one per post, instead of
+        // one row per site.
+        const activeSites = Array.isArray(sitesRes)
+          ? sitesRes.filter((s) => s.status === 'active')
+          : []
+
+        const flattenedPosts = activeSites.flatMap((site) =>
+          (site.posts || [])
+            .filter((p) => p.status === 'active')
+            .map((post) => ({
+              ...post,
+              site_name: site.name,
+            }))
+        )
+
+        setPosts(flattenedPosts)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -82,12 +100,12 @@ function Roster() {
     setWeekStart(next)
   }
 
-  function cellContent(site, date, shift) {
+  function cellContent(post, date, shift) {
     const dateStr = formatDate(date)
     const matches = assignments.filter(
-      (a) => a.site_id === site.id && a.date === dateStr && a.shift === shift
+      (a) => a.post_id === post.id && a.date === dateStr && a.shift === shift
     )
-    const required = shift === 'morning' ? site.morning_guards_required : site.night_guards_required
+    const required = shift === 'morning' ? post.morning_guards_required : post.night_guards_required
     const missing = required - matches.length
 
     return (
@@ -159,7 +177,7 @@ function Roster() {
               <thead>
                 <tr>
                   <th className="text-left text-xs text-slate-400 uppercase p-2 border-b border-slate-200 sticky left-0 bg-white">
-                    Site / Shift
+                    Site / Post / Shift
                   </th>
                   {weekDates.map((d) => (
                     <th key={formatDate(d)} className="text-xs text-slate-400 uppercase p-2 border-b border-slate-200 text-center min-w-[110px]">
@@ -169,25 +187,25 @@ function Roster() {
                 </tr>
               </thead>
               <tbody>
-                {sites.map((site) => (
+                {posts.map((post) => (
                   <>
-                    <tr key={`${site.id}-morning`}>
+                    <tr key={`${post.id}-morning`}>
                       <td className="p-2 border-b border-slate-100 font-medium text-slate-700 sticky left-0 bg-white">
-                        {site.name} <span className="text-xs text-slate-400">(Day)</span>
+                        {post.site_name} — {post.name} <span className="text-xs text-slate-400">(Day)</span>
                       </td>
                       {weekDates.map((d) => (
                         <td key={formatDate(d)} className="p-2 border-b border-slate-100 align-top">
-                          {cellContent(site, d, 'morning')}
+                          {cellContent(post, d, 'morning')}
                         </td>
                       ))}
                     </tr>
-                    <tr key={`${site.id}-night`}>
+                    <tr key={`${post.id}-night`}>
                       <td className="p-2 border-b border-slate-100 font-medium text-slate-700 sticky left-0 bg-white">
-                        {site.name} <span className="text-xs text-slate-400">(Night)</span>
+                        {post.site_name} — {post.name} <span className="text-xs text-slate-400">(Night)</span>
                       </td>
                       {weekDates.map((d) => (
                         <td key={formatDate(d)} className="p-2 border-b border-slate-100 align-top">
-                          {cellContent(site, d, 'night')}
+                          {cellContent(post, d, 'night')}
                         </td>
                       ))}
                     </tr>
