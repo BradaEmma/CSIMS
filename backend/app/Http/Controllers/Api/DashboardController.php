@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $shiftKey = app(ShiftEngineService::class)->currentShiftKey();
         $requiredField = $shiftKey['shift'] === 'morning' ? 'morning_guards_required' : 'night_guards_required';
 
-        $activeSites = \App\Models\Site::where('status', 'active')->get();
+        $activeSites = \App\Models\Site::with('posts')->where('status', 'active')->get();
 
         $expected = RosterAssignment::with(['site'])
             ->where('date', $shiftKey['date'])
@@ -36,8 +36,8 @@ class DashboardController extends Controller
         // Base the summary on EVERY active site, not just sites that
         // already have assignments — an unstaffed site is a real shortage,
         // not something that should silently vanish from the dashboard.
-        $sites = $activeSites->map(function ($site) use ($expected, $onDuty, $requiredField) {
-            $required = $site->{$requiredField} ?? 0;
+        $sites = $activeSites->map(function ($site) use ($onDuty, $requiredField) {
+            $required = $site->posts->where('status', 'active')->sum($requiredField);
             $present = $onDuty->where('site_id', $site->id)->count();
 
             return [

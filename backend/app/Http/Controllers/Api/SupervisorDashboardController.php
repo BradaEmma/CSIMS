@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Post;
 use App\Models\RosterAssignment;
 use App\Models\Site;
 use App\Services\ShiftEngineService;
@@ -39,7 +40,10 @@ class SupervisorDashboardController extends Controller
                 ->whereIn('roster_assignment_id', $rosterIds)
                 ->get();
 
-            $required = $sites->sum($requiredField);
+            $required = Post::whereIn('site_id', $siteIds)
+                ->where('status', 'active')
+                ->sum($requiredField);
+
             $present = $attendance->whereNull('check_out_at')->count();
 
             $response[$zone] = [
