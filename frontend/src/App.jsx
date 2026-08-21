@@ -10,6 +10,7 @@ import Payroll from './components/Payroll'
 import Deductions from './components/Deductions'
 import Clients from './components/Clients'
 import Contracts from './components/Contracts'
+import Departments from './components/Departments'
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('csims_token')
@@ -101,6 +102,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/departments"
+          element={
+            <ProtectedRoute>
+             <Departments />
+           </ProtectedRoute>
+         }
+       />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

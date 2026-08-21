@@ -18,6 +18,7 @@ import {
   Menu,
   Briefcase,
   FileText,
+  Landmark,
 } from 'lucide-react'
 import logo from '../assets/logo.png'
 
@@ -39,6 +40,12 @@ const navGroups = [
       { label: 'Attendance', path: '/attendance', icon: CheckSquare },
       { label: 'Incidents', path: '/incidents', icon: AlertTriangle },
       { label: 'Reports', path: '/reports', icon: BarChart3 },
+    ],
+  },
+  { 
+    label: 'HR',
+    items: [
+      { label: 'Departments', path: '/departments', icon: Landmark },
     ],
   },
   {

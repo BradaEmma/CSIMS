@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\DepartmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -253,6 +255,44 @@ Route::prefix('v1')->group(function () {
                 Route::post('/',        [ContractController::class, 'store']);
                 Route::put('/{id}',     [ContractController::class, 'update']);
                 Route::delete('/{id}',  [ContractController::class, 'destroy']);
+            });
+        });
+
+                /*
+        |------------------------------------------------------------------
+        | EMPLOYEES MODULE
+        |------------------------------------------------------------------
+        */
+        Route::prefix('employees')->group(function () {
+
+            Route::middleware('role:admin|supervisor')->group(function () {
+                Route::get('/',     [EmployeeController::class, 'index']);
+                Route::get('/{id}', [EmployeeController::class, 'show']);
+            });
+
+            Route::middleware('role:admin')->group(function () {
+                Route::post('/',        [EmployeeController::class, 'store']);
+                Route::put('/{id}',     [EmployeeController::class, 'update']);
+                Route::delete('/{id}',  [EmployeeController::class, 'destroy']);
+            });
+        });
+
+        /*
+        |------------------------------------------------------------------
+        | DEPARTMENTS MODULE
+        |------------------------------------------------------------------
+        */
+        Route::prefix('departments')->group(function () {
+
+            Route::middleware('role:admin|supervisor')->group(function () {
+                Route::get('/',     [DepartmentController::class, 'index']);
+                Route::get('/{id}', [DepartmentController::class, 'show']);
+            });
+
+            Route::middleware('role:admin')->group(function () {
+                Route::post('/',        [DepartmentController::class, 'store']);
+                Route::put('/{id}',     [DepartmentController::class, 'update']);
+                Route::delete('/{id}',  [DepartmentController::class, 'destroy']);
             });
         });
 
