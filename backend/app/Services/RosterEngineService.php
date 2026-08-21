@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Guard;
 use App\Models\GuardAssignment;
+use App\Models\Post;
 use App\Models\Site;
 use App\Models\RosterAssignment;
 use App\Models\RosterGenerationLog;
@@ -23,7 +24,10 @@ class RosterEngineService
                 $end   = $start->copy()->addDays(6);
 
                 $guards = Guard::where('status', 'active')->get();
-                $sites  = Site::where('status', 'active')->get();
+                $posts  = Post::where('status', 'active')
+                    ->whereHas('site', fn ($q) => $q->where('status', 'active'))
+                    ->with('site')
+                    ->get();
 
                 $this->loadAssignmentCounts($guards, $start);
 
@@ -32,32 +36,33 @@ class RosterEngineService
 
                 for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
 
-                    foreach ($sites as $site) {
+                    foreach ($posts as $post) {
 
                         $requirements = [
-                            'morning' => $site->morning_guards_required ?? 0,
-                            'night'   => $site->night_guards_required ?? 0,
+                            'morning' => $post->morning_guards_required ?? 0,
+                            'night'   => $post->night_guards_required ?? 0,
                         ];
 
                         foreach ($requirements as $shift => $needed) {
 
-                            $assigned = RosterAssignment::where('site_id', $site->id)
+                            $assigned = RosterAssignment::where('post_id', $post->id)
                                 ->where('date', $date->toDateString())
                                 ->where('shift', $shift)
                                 ->count();
 
                             while ($assigned < $needed) {
 
-                                $guard = $this->findAvailableGuard($guards, $site, $date, $shift);
+                                $guard = $this->findAvailableGuard($guards, $post, $date, $shift);
 
                                 if (!$guard) {
-                                    $guard = $this->findOvertimeGuard($guards, $site, $date, $shift);
+                                    $guard = $this->findOvertimeGuard($guards, $post, $date, $shift);
                                 }
 
                                 if (!$guard) {
                                     $shortages[] = [
                                         'date' => $date->toDateString(),
-                                        'site' => $site->name,
+                                        'site' => $post->site->name,
+                                        'post' => $post->name,
                                         'shift' => $shift,
                                         'missing' => $needed - $assigned,
                                     ];
@@ -69,11 +74,12 @@ class RosterEngineService
                                 RosterAssignment::updateOrCreate(
                                     [
                                         'guard_id' => $guard->id,
-                                        'site_id'  => $site->id,
+                                        'post_id'  => $post->id,
                                         'date'     => $date->toDateString(),
                                         'shift'    => $shift,
                                     ],
                                     [
+                                        'site_id' => $post->site_id,
                                         'is_overtime' => $isOvertime,
                                         'generated_by_system' => true,
                                     ]
@@ -153,15 +159,24 @@ class RosterEngineService
      * shift-preference matching and the rest-day block on purpose, but
      * still enforces genuine site eligibility and requires a real
      * supervisor/admin ID as proof the guard's consent was recorded.
+     *
+     * Takes a postId (not siteId) — a double shift covers a specific post,
+     * and site eligibility is still checked via the post's parent site.
      */
-    public function assignDoubleShift(int $guardId, int $siteId, string $date, string $shift, int $confirmedBy): array
+    public function assignDoubleShift(int $guardId, int $postId, string $date, string $shift, int $confirmedBy): array
     {
         $guard = Guard::find($guardId);
-        $site = Site::find($siteId);
+        $post = Post::find($postId);
 
         if (!$guard || $guard->status !== 'active') {
             return ['success' => false, 'message' => 'Guard not found or not active'];
         }
+
+        if (!$post || $post->status !== 'active') {
+            return ['success' => false, 'message' => 'Post not found or not active'];
+        }
+
+        $site = $post->site;
 
         if (!$site || $site->status !== 'active') {
             return ['success' => false, 'message' => 'Site not found or not active'];
@@ -173,12 +188,12 @@ class RosterEngineService
 
         $parsedDate = Carbon::parse($date);
 
-        if (!$this->isEligibleForSite($guardId, $siteId, $parsedDate)) {
+        if (!$this->isEligibleForSite($guardId, $site->id, $parsedDate)) {
             return ['success' => false, 'message' => 'Guard is not eligible for this site'];
         }
 
         $existing = RosterAssignment::where('guard_id', $guardId)
-            ->where('site_id', $siteId)
+            ->where('post_id', $postId)
             ->where('date', $date)
             ->where('shift', $shift)
             ->first();
@@ -189,7 +204,8 @@ class RosterEngineService
 
         $assignment = RosterAssignment::create([
             'guard_id' => $guardId,
-            'site_id' => $siteId,
+            'site_id' => $site->id,
+            'post_id' => $postId,
             'date' => $date,
             'shift' => $shift,
             'is_overtime' => $this->isRestDay($guardId, $parsedDate),
@@ -218,14 +234,14 @@ class RosterEngineService
         }
     }
 
-    private function rankedCandidates($guards, Site $site, Carbon $date, string $shift, bool $requireRestDayOk)
+    private function rankedCandidates($guards, Post $post, Carbon $date, string $shift, bool $requireRestDayOk)
     {
         return $guards
-            ->filter(function ($guard) use ($site, $date, $shift, $requireRestDayOk) {
+            ->filter(function ($guard) use ($post, $date, $shift, $requireRestDayOk) {
                 if (!$this->matchesShiftPreference($guard, $shift)) {
                     return false;
                 }
-                if (!$this->isEligibleForSite($guard->id, $site->id, $date)) {
+                if (!$this->isEligibleForSite($guard->id, $post->site_id, $date)) {
                     return false;
                 }
                 if ($this->alreadyAssigned($guard->id, $date)) {
@@ -245,14 +261,14 @@ class RosterEngineService
         return $guard->shift_type === 'either' || $guard->shift_type === $shift;
     }
 
-    private function findAvailableGuard($guards, Site $site, Carbon $date, string $shift)
+    private function findAvailableGuard($guards, Post $post, Carbon $date, string $shift)
     {
-        return $this->rankedCandidates($guards, $site, $date, $shift, true)->first();
+        return $this->rankedCandidates($guards, $post, $date, $shift, true)->first();
     }
 
-    private function findOvertimeGuard($guards, Site $site, Carbon $date, string $shift)
+    private function findOvertimeGuard($guards, Post $post, Carbon $date, string $shift)
     {
-        return $this->rankedCandidates($guards, $site, $date, $shift, false)->first();
+        return $this->rankedCandidates($guards, $post, $date, $shift, false)->first();
     }
 
     private function isEligibleForSite(int $guardId, int $siteId, Carbon $date): bool
