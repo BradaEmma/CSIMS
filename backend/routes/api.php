@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\GuardController;
 use App\Http\Controllers\Api\GuardAssignmentController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\SiteController;
+use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\SupervisorDashboardController;
 use App\Http\Controllers\Api\RosterController;
@@ -84,6 +85,35 @@ Route::prefix('v1')->group(function () {
                 Route::post('/',       [SiteController::class, 'store']);
                 Route::put('/{id}',    [SiteController::class, 'update']);
                 Route::delete('/{id}', [SiteController::class, 'destroy']);
+            });
+        });
+
+                /*
+        |------------------------------------------------------------------
+        | POSTS MODULE
+        |------------------------------------------------------------------
+        | Posts are physical positions/slots within a site, each carrying
+        | its own per-shift guard requirement. Nested under sites for
+        | listing/creation; flat /posts/{id} for direct show/update/delete.
+        |------------------------------------------------------------------
+        */
+        Route::prefix('sites/{siteId}/posts')->middleware('role:admin|supervisor')->group(function () {
+            Route::get('/', [PostController::class, 'index']);
+
+            Route::middleware('role:admin')->group(function () {
+                Route::post('/', [PostController::class, 'store']);
+            });
+        });
+
+        Route::prefix('posts')->group(function () {
+
+            Route::middleware('role:admin|supervisor')->group(function () {
+                Route::get('/{id}', [PostController::class, 'show']);
+            });
+
+            Route::middleware('role:admin')->group(function () {
+                Route::put('/{id}',    [PostController::class, 'update']);
+                Route::delete('/{id}', [PostController::class, 'destroy']);
             });
         });
 
