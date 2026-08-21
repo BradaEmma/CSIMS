@@ -19,6 +19,7 @@ import {
   Briefcase,
   FileText,
   Landmark,
+  IdCard,
 } from 'lucide-react'
 import logo from '../assets/logo.png'
 
@@ -45,10 +46,12 @@ const navGroups = [
   { 
     label: 'HR',
     items: [
+      { label: 'Employees', path: '/employees', icon: IdCard },
       { label: 'Departments', path: '/departments', icon: Landmark },
     ],
   },
   {
+
     label: 'Payroll & Finance',
     items: [
       { label: 'Payroll', path: '/payroll', icon: Wallet },
