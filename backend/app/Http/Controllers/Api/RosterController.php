@@ -31,14 +31,14 @@ class RosterController extends Controller
     {
         $request->validate([
             'guard_id' => 'required|integer|exists:guards,id',
-            'site_id'  => 'required|integer|exists:sites,id',
+            'post_id'  => 'required|integer|exists:posts,id',
             'date'     => 'required|date',
             'shift'    => 'required|in:morning,night',
         ]);
 
         $result = app(RosterEngineService::class)->assignDoubleShift(
             guardId: $request->guard_id,
-            siteId: $request->site_id,
+            postId: $request->post_id,
             date: $request->date,
             shift: $request->shift,
             confirmedBy: $request->user()->id
@@ -52,18 +52,19 @@ class RosterController extends Controller
 
     /**
      * GET /roster
-     * List roster assignments, most recent first, with guard/site loaded.
+     * List roster assignments, most recent first, with guard/site/post loaded.
      */
     public function index(Request $request)
     {
         $request->validate([
             'guard_id'   => 'nullable|integer|exists:guards,id',
             'site_id'    => 'nullable|integer|exists:sites,id',
+            'post_id'    => 'nullable|integer|exists:posts,id',
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $query = RosterAssignment::with(['assignedGuard', 'site'])
+        $query = RosterAssignment::with(['assignedGuard', 'site', 'post'])
             ->orderBy('date')
             ->orderBy('site_id')
             ->orderBy('shift');
@@ -74,6 +75,10 @@ class RosterController extends Controller
 
         if ($request->site_id) {
             $query->where('site_id', $request->site_id);
+        }
+
+        if ($request->post_id) {
+            $query->where('post_id', $request->post_id);
         }
 
         if ($request->start_date && $request->end_date) {
@@ -90,7 +95,7 @@ class RosterController extends Controller
      */
     public function showDate(string $date)
     {
-        $assignments = RosterAssignment::with(['assignedGuard', 'site'])
+        $assignments = RosterAssignment::with(['assignedGuard', 'site', 'post'])
             ->where('date', $date)
             ->orderBy('site_id')
             ->orderBy('shift')
