@@ -22,13 +22,12 @@ class SiteController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'                     => 'required|string',
-            'zone'                     => 'required|string',
-            'location'                 => 'nullable|string',
-            'description'              => 'nullable|string',
-            'required_guards'          => 'nullable|integer|min:0',
-            'morning_guards_required'  => 'required|integer|min:0',
-            'night_guards_required'    => 'required|integer|min:0',
+            'name'             => 'required|string',
+            'zone'             => 'required|string',
+            'location'         => 'nullable|string',
+            'description'      => 'nullable|string',
+            'required_guards'  => 'nullable|integer|min:0',
+            'contract_id'      => 'nullable|exists:contracts,id',
         ]);
 
         $site = Site::create([
@@ -47,7 +46,7 @@ class SiteController extends Controller
      */
     public function show($id)
     {
-        $site = Site::findOrFail($id);
+        $site = Site::with('posts')->findOrFail($id);
         return response()->json($site);
     }
 
@@ -59,14 +58,13 @@ class SiteController extends Controller
         $site = Site::findOrFail($id);
 
         $validated = $request->validate([
-            'name'                     => 'sometimes|string',
-            'zone'                     => 'sometimes|string',
-            'location'                 => 'sometimes|nullable|string',
-            'description'              => 'sometimes|nullable|string',
-            'required_guards'          => 'sometimes|integer|min:0',
-            'morning_guards_required'  => 'sometimes|integer|min:0',
-            'night_guards_required'    => 'sometimes|integer|min:0',
-            'status'                   => 'sometimes|in:active,inactive',
+            'name'             => 'sometimes|string',
+            'zone'             => 'sometimes|string',
+            'location'         => 'sometimes|nullable|string',
+            'description'      => 'sometimes|nullable|string',
+            'required_guards'  => 'sometimes|integer|min:0',
+            'contract_id'      => 'sometimes|nullable|exists:contracts,id',
+            'status'           => 'sometimes|in:active,inactive',
         ]);
 
         $site->update($validated);
