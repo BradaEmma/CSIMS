@@ -15,8 +15,6 @@ class Site extends Model
         'description',
         'required_guards',
         'zone',
-        'morning_guards_required',
-        'night_guards_required',
         'status',
         'contract_id',
     ];
@@ -36,6 +34,11 @@ class Site extends Model
     public function assignments()
     {
         return $this->hasMany(GuardAssignment::class);
+    }
+
+        public function posts()
+    {
+        return $this->hasMany(Post::class);
     }
 
     public function contract()

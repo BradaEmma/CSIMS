@@ -11,12 +11,14 @@ class RosterAssignment extends Model
     protected $fillable = [
         'guard_id',
         'site_id',
+        'post_id',
         'date',
         'shift',
         'is_overtime',
         'is_double_shift',
         'consent_confirmed_by',
         'generated_by_system',
+        
     ];
 
     protected $casts = [
@@ -33,6 +35,11 @@ class RosterAssignment extends Model
     public function site()
     {
         return $this->belongsTo(Site::class);
+    }
+
+        public function post()
+    {
+        return $this->belongsTo(Post::class);
     }
 
     public function consentConfirmedBy()
