@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { apiPost, apiPut } from '../lib/api'
 
-function SiteModal({ site, onClose, onSaved }) {
-  const isEdit = !!site
+function PostModal({ siteId, post, onClose, onSaved }) {
+  const isEdit = !!post
 
   const [form, setForm] = useState({
-    name: site?.name || '',
-    zone: site?.zone || '',
-    location: site?.location || '',
-    description: site?.description || '',
-    status: site?.status || 'active',
+    name: post?.name || '',
+    morning_guards_required: post?.morning_guards_required ?? 1,
+    night_guards_required: post?.night_guards_required ?? 1,
+    status: post?.status || 'active',
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -26,9 +25,8 @@ function SiteModal({ site, onClose, onSaved }) {
 
     const payload = {
       name: form.name,
-      zone: form.zone,
-      location: form.location || null,
-      description: form.description || null,
+      morning_guards_required: Number(form.morning_guards_required),
+      night_guards_required: Number(form.night_guards_required),
     }
 
     if (isEdit) {
@@ -37,9 +35,9 @@ function SiteModal({ site, onClose, onSaved }) {
 
     try {
       if (isEdit) {
-        await apiPut(`/sites/${site.id}`, payload)
+        await apiPut(`/posts/${post.id}`, payload)
       } else {
-        await apiPost('/sites', payload)
+        await apiPost(`/sites/${siteId}/posts`, payload)
       }
       onSaved()
     } catch (err) {
@@ -53,7 +51,7 @@ function SiteModal({ site, onClose, onSaved }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
       <div className="bg-white rounded-xl w-full max-w-md p-6">
         <h2 className="text-lg font-bold text-slate-800 mb-4">
-          {isEdit ? 'Edit Site' : 'Add Site'}
+          {isEdit ? 'Edit Post' : 'Add Post'}
         </h2>
 
         {error && (
@@ -62,7 +60,7 @@ function SiteModal({ site, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1">Site Name</label>
+            <label className="text-xs font-medium text-slate-500 block mb-1">Post Name</label>
             <input
               name="name"
               value={form.name}
@@ -72,36 +70,31 @@ function SiteModal({ site, onClose, onSaved }) {
             />
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1">Zone</label>
-            <input
-              name="zone"
-              value={form.zone}
-              onChange={handleChange}
-              required
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1">Location</label>
-            <input
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1">Description</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows={2}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-slate-500 block mb-1">Morning Guards Needed</label>
+              <input
+                type="number"
+                min="0"
+                name="morning_guards_required"
+                value={form.morning_guards_required}
+                onChange={handleChange}
+                required
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-500 block mb-1">Night Guards Needed</label>
+              <input
+                type="number"
+                min="0"
+                name="night_guards_required"
+                value={form.night_guards_required}
+                onChange={handleChange}
+                required
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+              />
+            </div>
           </div>
 
           {isEdit && (
@@ -132,7 +125,7 @@ function SiteModal({ site, onClose, onSaved }) {
               disabled={saving}
               className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition disabled:opacity-50"
             >
-              {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Site'}
+              {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Post'}
             </button>
           </div>
         </form>
@@ -141,4 +134,4 @@ function SiteModal({ site, onClose, onSaved }) {
   )
 }
 
-export default SiteModal
+export default PostModal
