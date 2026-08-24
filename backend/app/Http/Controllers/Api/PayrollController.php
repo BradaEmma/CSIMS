@@ -97,8 +97,8 @@ class PayrollController extends Controller
             'status' => 'required|in:draft,finalized,paid',
         ]);
 
-        $result = $this->payrollService->updateStatus($id, $request->status);
 
+        $result = $this->payrollService->updateStatus($id, $request->status, $request->user()->id);
         return response()->json(
             ['message' => $result['message'] ?? null, 'data' => $result['data'] ?? null],
             $result['success'] ? 200 : 422

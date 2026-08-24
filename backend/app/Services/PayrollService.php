@@ -11,9 +11,13 @@ use App\Models\PayrollDeduction;
 use App\Models\PayrollDeductionType;
 use App\Models\RosterAssignment;
 use Illuminate\Support\Facades\DB;
+use App\Models\ApprovalRequest;
+use App\Services\ApprovalWorkflowService;
 
 class PayrollService
 {
+    public function __construct(private ApprovalWorkflowService $approvalService) {}
+
     public function generatePayrollForGuard(int $guardId, string $period): array
     {
         return DB::transaction(function () use ($guardId, $period) {
@@ -184,7 +188,7 @@ class PayrollService
         return ['success' => true, 'data' => $deduction];
     }
 
-    public function updateStatus(int $recordId, string $status): array
+        public function updateStatus(int $recordId, string $status, ?int $actingUserId = null): array
     {
         if (!in_array($status, ['draft', 'finalized', 'paid'], true)) {
             return ['success' => false, 'message' => 'Invalid status'];
@@ -196,8 +200,72 @@ class PayrollService
             return ['success' => false, 'message' => 'Payroll record not found'];
         }
 
+        // The finalized -> paid transition is gated behind the approval
+        // engine. Every other transition (e.g. draft -> finalized) is
+        // untouched and behaves exactly as before.
+        if ($status === 'paid' && $record->status === 'finalized') {
+            return $this->requestPayrollApproval($record, $actingUserId);
+        }
+
         $record->update(['status' => $status]);
 
         return ['success' => true, 'data' => $record];
+    }
+
+    /**
+     * Gate for the finalized -> paid transition. Looks at the most recent
+     * approval request for this payroll record:
+     *   - none, or last one terminal (rejected/returned/cancelled) -> submit a fresh request
+     *   - pending -> block, tell the caller to wait
+     *   - approved -> proceed, actually mark the record paid
+     */
+    protected function requestPayrollApproval(PayrollRecord $record, ?int $actingUserId): array
+    {
+        $latest = ApprovalRequest::where('approvable_type', 'payroll_record')
+            ->where('approvable_id', $record->id)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($latest && $latest->status === 'pending') {
+            return [
+                'success' => false,
+                'message' => 'This payroll record is awaiting approval. It will be marked paid once approved.',
+                'data' => $record,
+            ];
+        }
+
+        if ($latest && $latest->status === 'approved') {
+            $record->update(['status' => 'paid']);
+            return [
+                'success' => true,
+                'message' => 'Payroll record marked as paid.',
+                'data' => $record->fresh(),
+            ];
+        }
+
+        if (!$actingUserId) {
+            return [
+                'success' => false,
+                'message' => 'Unable to submit for approval: no acting user provided.',
+            ];
+        }
+
+        $result = $this->approvalService->submit(
+            'payroll_record',
+            $record->id,
+            'payroll',
+            $actingUserId,
+            (float) $record->net_pay
+        );
+
+        if (!$result['success']) {
+            return $result;
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Submitted for approval. Payroll record will be marked paid once approved.',
+            'data' => $record,
+        ];
     }
 }
