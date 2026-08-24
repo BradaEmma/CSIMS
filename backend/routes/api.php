@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\ApprovalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -221,12 +222,36 @@ Route::prefix('v1')->group(function () {
         | INCIDENT TYPES MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('incident-types')->group(function () {
+                Route::prefix('incident-types')->group(function () {
             Route::get('/', [IncidentTypeController::class, 'index']);
 
             Route::middleware('role:admin')->group(function () {
                 Route::post('/',    [IncidentTypeController::class, 'store']);
                 Route::put('/{id}', [IncidentTypeController::class, 'update']);
+            });
+        });
+
+        /*
+        |------------------------------------------------------------------
+        | APPROVALS MODULE
+        |------------------------------------------------------------------
+        | Generic multi-level approval engine. Any authenticated user can
+        | submit/act on a request — the service layer enforces per-level
+        | role checks (hasRole($approver_role)) and separation of duties.
+        |------------------------------------------------------------------
+        */
+        Route::prefix('approvals')->group(function () {
+
+            Route::post('/',              [ApprovalController::class, 'submit']);
+            Route::get('/pending',        [ApprovalController::class, 'pending']);
+            Route::get('/{id}',           [ApprovalController::class, 'show']);
+            Route::post('/{id}/approve',  [ApprovalController::class, 'approve']);
+            Route::post('/{id}/reject',   [ApprovalController::class, 'reject']);
+            Route::post('/{id}/return',   [ApprovalController::class, 'return']);
+            Route::post('/{id}/cancel',   [ApprovalController::class, 'cancel']);
+
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/', [ApprovalController::class, 'index']);
             });
         });
 
