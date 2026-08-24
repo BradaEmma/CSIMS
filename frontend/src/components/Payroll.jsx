@@ -66,8 +66,12 @@ function Payroll() {
   async function handleStatusChange(record, newStatus) {
     setUpdatingId(record.id)
     setError('')
+    setMessage('')
     try {
-      await apiPatch(`/payroll/${record.id}/status`, { status: newStatus })
+      const res = await apiPatch(`/payroll/${record.id}/status`, { status: newStatus })
+      if (res.message) {
+        setMessage(res.message)
+      }
       loadRecords()
     } catch (err) {
       setError(err.message)
@@ -185,7 +189,12 @@ function Payroll() {
                         Finalize
                       </button>
                     )}
-                    {r.status === 'finalized' && (
+                                        {r.status === 'finalized' && r.approval_status === 'pending' && (
+                      <span className="text-xs font-medium text-slate-400 italic">
+                        Awaiting Approval
+                      </span>
+                    )}
+                    {r.status === 'finalized' && r.approval_status !== 'pending' && (
                       <button
                         onClick={() => handleStatusChange(r, 'paid')}
                         disabled={updatingId === r.id}

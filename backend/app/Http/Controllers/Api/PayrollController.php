@@ -9,6 +9,7 @@ use App\Models\PayrollSetting;
 use App\Services\PayrollService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\ApprovalRequest;
 
 class PayrollController extends Controller
 {
@@ -49,7 +50,7 @@ class PayrollController extends Controller
     /**
      * GET /api/payroll
      */
-    public function index(Request $request): JsonResponse
+        public function index(Request $request): JsonResponse
     {
         $request->validate([
             'guard_id' => 'nullable|integer|exists:guards,id',
@@ -71,7 +72,29 @@ class PayrollController extends Controller
             $query->where('status', $request->status);
         }
 
-        return response()->json(['data' => $query->paginate(30)]);
+        $paginated = $query->paginate(30);
+
+        // Attach approval_status to finalized records so the frontend can
+        // show "Awaiting Approval" instead of a clickable Mark Paid button
+        // when a pending approval request already exists for that record.
+        $finalizedIds = $paginated->getCollection()->where('status', 'finalized')->pluck('id');
+
+        if ($finalizedIds->isNotEmpty()) {
+            $latestRequests = ApprovalRequest::where('approvable_type', 'payroll_record')
+                ->whereIn('approvable_id', $finalizedIds)
+                ->orderByDesc('created_at')
+                ->get()
+                ->unique('approvable_id')
+                ->keyBy('approvable_id');
+
+            $paginated->getCollection()->transform(function ($record) use ($latestRequests) {
+                $latest = $latestRequests->get($record->id);
+                $record->approval_status = ($latest && $latest->status === 'pending') ? 'pending' : null;
+                return $record;
+            });
+        }
+
+        return response()->json(['data' => $paginated]);
     }
 
     /**
