@@ -20,15 +20,19 @@ import {
   FileText,
   Landmark,
   IdCard,
+  ClipboardCheck,
 } from 'lucide-react'
 import logo from '../assets/logo.png'
 
 import NotificationBell from './NotificationBell'
 
 const navGroups = [
-  {
+    {
     label: null,
-    items: [{ label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard }],
+    items: [
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+      { label: 'Approvals', path: '/approvals', icon: ClipboardCheck },
+    ],
   },
   {
     label: 'Operations',

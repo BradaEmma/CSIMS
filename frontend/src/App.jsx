@@ -12,6 +12,7 @@ import Clients from './components/Clients'
 import Contracts from './components/Contracts'
 import Departments from './components/Departments'
 import Employees from './components/Employees'
+import Approvals from './components/Approvals'
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('csims_token')
@@ -52,6 +53,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Incidents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/approvals"
+          element={
+            <ProtectedRoute>
+              <Approvals />
             </ProtectedRoute>
           }
         />
