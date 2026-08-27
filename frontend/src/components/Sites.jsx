@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import SiteModal from './SiteModal'
 import PostModal from './PostModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -23,12 +24,14 @@ function Sites() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSite, setEditingSite] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [confirmingSite, setConfirmingSite] = useState(null)
 
   const [expandedSiteId, setExpandedSiteId] = useState(null)
   const [postModalOpen, setPostModalOpen] = useState(false)
   const [postModalSiteId, setPostModalSiteId] = useState(null)
   const [editingPost, setEditingPost] = useState(null)
   const [deletingPostId, setDeletingPostId] = useState(null)
+  const [confirmingPost, setConfirmingPost] = useState(null)
 
   function loadSites() {
     setLoading(true)
@@ -58,10 +61,13 @@ function Sites() {
     loadSites()
   }
 
-  async function handleDelete(site) {
-    if (!confirm(`Delete ${site.name}? This cannot be undone.`)) {
-      return
-    }
+  function handleDelete(site) {
+    setConfirmingSite(site)
+  }
+
+  async function confirmDeleteSite() {
+    const site = confirmingSite
+    setConfirmingSite(null)
     setDeletingId(site.id)
     try {
       await apiDelete(`/sites/${site.id}`)
@@ -96,10 +102,13 @@ function Sites() {
     loadSites()
   }
 
-  async function handleDeletePost(post) {
-    if (!confirm(`Delete post "${post.name}"? This cannot be undone.`)) {
-      return
-    }
+  function handleDeletePost(post) {
+    setConfirmingPost(post)
+  }
+
+  async function confirmDeletePost() {
+    const post = confirmingPost
+    setConfirmingPost(null)
     setDeletingPostId(post.id)
     try {
       await apiDelete(`/posts/${post.id}`)
@@ -266,12 +275,32 @@ function Sites() {
         />
       )}
 
-      {postModalOpen && (
+            {postModalOpen && (
         <PostModal
           siteId={postModalSiteId}
           post={editingPost}
           onClose={() => setPostModalOpen(false)}
           onSaved={handlePostSaved}
+        />
+      )}
+
+      {confirmingSite && (
+        <ConfirmModal
+          title="Delete Site"
+          message={`Delete ${confirmingSite.name}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDeleteSite}
+          onCancel={() => setConfirmingSite(null)}
+        />
+      )}
+
+      {confirmingPost && (
+        <ConfirmModal
+          title="Delete Post"
+          message={`Delete post "${confirmingPost.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDeletePost}
+          onCancel={() => setConfirmingPost(null)}
         />
       )}
     </AppLayout>

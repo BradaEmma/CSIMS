@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import EmployeeModal from './EmployeeModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -22,6 +23,7 @@ function Employees() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [confirmingEmployee, setConfirmingEmployee] = useState(null)
 
   function loadEmployees() {
     setLoading(true)
@@ -51,10 +53,13 @@ function Employees() {
     loadEmployees()
   }
 
-  async function handleDelete(employee) {
-    if (!confirm(`Delete ${employee.name}? This cannot be undone.`)) {
-      return
-    }
+  function handleDelete(employee) {
+    setConfirmingEmployee(employee)
+  }
+
+  async function confirmDelete() {
+    const employee = confirmingEmployee
+    setConfirmingEmployee(null)
     setDeletingId(employee.id)
     try {
       await apiDelete(`/employees/${employee.id}`)
@@ -133,11 +138,21 @@ function Employees() {
         </div>
       )}
 
-      {modalOpen && (
+            {modalOpen && (
         <EmployeeModal
           employee={editingEmployee}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {confirmingEmployee && (
+        <ConfirmModal
+          title="Delete Employee"
+          message={`Delete ${confirmingEmployee.name}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingEmployee(null)}
         />
       )}
     </AppLayout>

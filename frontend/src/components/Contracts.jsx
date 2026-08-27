@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import ContractModal from './ContractModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -28,6 +29,7 @@ function Contracts() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingContract, setEditingContract] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [confirmingContract, setConfirmingContract] = useState(null)
 
   function loadContracts() {
     setLoading(true)
@@ -57,10 +59,13 @@ function Contracts() {
     loadContracts()
   }
 
-  async function handleDelete(contract) {
-    if (!confirm(`Delete contract ${contract.reference_number}? This cannot be undone.`)) {
-      return
-    }
+    function handleDelete(contract) {
+    setConfirmingContract(contract)
+  }
+
+  async function confirmDelete() {
+    const contract = confirmingContract
+    setConfirmingContract(null)
     setDeletingId(contract.id)
     try {
       await apiDelete(`/contracts/${contract.id}`)
@@ -143,11 +148,21 @@ function Contracts() {
         </div>
       )}
 
-      {modalOpen && (
+            {modalOpen && (
         <ContractModal
           contract={editingContract}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {confirmingContract && (
+        <ConfirmModal
+          title="Delete Contract"
+          message={`Delete contract ${confirmingContract.reference_number}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingContract(null)}
         />
       )}
     </AppLayout>

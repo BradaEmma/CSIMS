@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import DepartmentModal from './DepartmentModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ isActive }) {
@@ -21,6 +22,7 @@ function Departments() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingDepartment, setEditingDepartment] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [confirmingDepartment, setConfirmingDepartment] = useState(null)
 
   function loadDepartments() {
     setLoading(true)
@@ -50,10 +52,13 @@ function Departments() {
     loadDepartments()
   }
 
-  async function handleDelete(department) {
-    if (!confirm(`Delete ${department.name}? This cannot be undone.`)) {
-      return
-    }
+    function handleDelete(department) {
+    setConfirmingDepartment(department)
+  }
+
+  async function confirmDelete() {
+    const department = confirmingDepartment
+    setConfirmingDepartment(null)
     setDeletingId(department.id)
     try {
       await apiDelete(`/departments/${department.id}`)
@@ -128,11 +133,21 @@ function Departments() {
         </div>
       )}
 
-      {modalOpen && (
+            {modalOpen && (
         <DepartmentModal
           department={editingDepartment}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {confirmingDepartment && (
+        <ConfirmModal
+          title="Delete Department"
+          message={`Delete ${confirmingDepartment.name}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDepartment(null)}
         />
       )}
     </AppLayout>

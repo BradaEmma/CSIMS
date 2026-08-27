@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import ClientModal from './ClientModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -22,6 +23,7 @@ function Clients() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [confirmingClient, setConfirmingClient] = useState(null)
 
   function loadClients() {
     setLoading(true)
@@ -51,10 +53,13 @@ function Clients() {
     loadClients()
   }
 
-  async function handleDelete(client) {
-    if (!confirm(`Delete ${client.name}? This cannot be undone.`)) {
-      return
-    }
+    function handleDelete(client) {
+    setConfirmingClient(client)
+  }
+
+  async function confirmDelete() {
+    const client = confirmingClient
+    setConfirmingClient(null)
     setDeletingId(client.id)
     try {
       await apiDelete(`/clients/${client.id}`)
@@ -138,6 +143,16 @@ function Clients() {
           client={editingClient}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {confirmingClient && (
+        <ConfirmModal
+          title="Delete Client"
+          message={`Delete ${confirmingClient.name}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingClient(null)}
         />
       )}
     </AppLayout>
