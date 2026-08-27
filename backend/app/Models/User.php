@@ -23,6 +23,11 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     protected function casts(): array
     {
         return [

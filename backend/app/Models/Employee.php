@@ -30,6 +30,11 @@ class Employee extends Model
         return $this->belongsTo(Department::class);
     }
 
+        public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function guardProfile()
     {
     return $this->hasOne(Guard::class);
