@@ -29,4 +29,9 @@ class PayrollDeduction extends Model
     {
         return $this->belongsTo(User::class, 'applied_by');
     }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }

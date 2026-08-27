@@ -24,4 +24,9 @@ class PayrollRecord extends Model
     {
         return $this->belongsTo(Guard::class, 'guard_id');
     }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }
