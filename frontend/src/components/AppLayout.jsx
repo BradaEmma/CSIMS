@@ -21,6 +21,7 @@ import {
   Landmark,
   IdCard,
   ClipboardCheck,
+  UserPlus,
 } from 'lucide-react'
 import logo from '../assets/logo.png'
 
@@ -40,6 +41,7 @@ const navGroups = [
       { label: 'Clients', path: '/clients', icon: Briefcase },
       { label: 'Contracts', path: '/contracts', icon: FileText },
       { label: 'Guards', path: '/guards', icon: Users },
+      { label: 'Assignments', path: '/assignments', icon: UserPlus, roles: ['admin', 'supervisor'] },
       { label: 'Sites', path: '/sites', icon: Building2 },
       { label: 'Roster', path: '/roster', icon: CalendarDays },
       { label: 'Attendance', path: '/attendance', icon: CheckSquare },
