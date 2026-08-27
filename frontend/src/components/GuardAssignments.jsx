@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import GuardAssignmentModal from './GuardAssignmentModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiPost } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -21,6 +22,7 @@ function GuardAssignments() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [endingId, setEndingId] = useState(null)
+  const [confirmingAssignment, setConfirmingAssignment] = useState(null)
 
   const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
   const canAssign = roles.includes('admin')
@@ -42,10 +44,13 @@ function GuardAssignments() {
     loadAssignments()
   }
 
-  async function handleEnd(assignment) {
-    if (!confirm(`End assignment for ${assignment.assigned_guard?.name || 'this guard'}?`)) {
-      return
-    }
+  function handleEnd(assignment) {
+    setConfirmingAssignment(assignment)
+  }
+
+  async function confirmEnd() {
+    const assignment = confirmingAssignment
+    setConfirmingAssignment(null)
     setEndingId(assignment.id)
     try {
       await apiPost(`/assignments/end/${assignment.id}`, {})
@@ -124,10 +129,20 @@ function GuardAssignments() {
         </div>
       )}
 
-      {modalOpen && canAssign && (
+          {modalOpen && canAssign && (
         <GuardAssignmentModal
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {confirmingAssignment && (
+        <ConfirmModal
+          title="End Assignment"
+          message={`End assignment for ${confirmingAssignment.assigned_guard?.name || 'this guard'}?`}
+          confirmLabel="End Assignment"
+          onConfirm={confirmEnd}
+          onCancel={() => setConfirmingAssignment(null)}
         />
       )}
     </AppLayout>

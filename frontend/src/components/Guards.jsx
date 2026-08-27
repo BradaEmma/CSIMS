@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import GuardModal from './GuardModal'
+import ConfirmModal from './ConfirmModal'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -22,6 +23,7 @@ function Guards() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingGuard, setEditingGuard] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [confirmingGuard, setConfirmingGuard] = useState(null)
 
   const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
   const canManage = roles.includes('admin')
@@ -54,10 +56,13 @@ function Guards() {
     loadGuards()
   }
 
-  async function handleDelete(guard) {
-    if (!confirm(`Delete ${guard.name}? This cannot be undone.`)) {
-      return
-    }
+    function handleDelete(guard) {
+    setConfirmingGuard(guard)
+  }
+
+  async function confirmDelete() {
+    const guard = confirmingGuard
+    setConfirmingGuard(null)
     setDeletingId(guard.id)
     try {
       await apiDelete(`/guards/${guard.id}`)
@@ -142,11 +147,21 @@ function Guards() {
         </div>
       )}
 
-      {modalOpen && canManage && (
+            {modalOpen && canManage && (
         <GuardModal
           guard={editingGuard}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
+        />
+      )}
+
+      {confirmingGuard && (
+        <ConfirmModal
+          title="Delete Guard"
+          message={`Delete ${confirmingGuard.name}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingGuard(null)}
         />
       )}
     </AppLayout>
