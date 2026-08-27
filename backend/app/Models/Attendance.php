@@ -9,7 +9,6 @@ class Attendance extends Model
     protected $fillable = [
         'guard_id',
         'site_id',
-        'shift_instance_id',
         'roster_assignment_id',
         'status',
         'notes',
@@ -36,11 +35,6 @@ class Attendance extends Model
     public function site()
     {
         return $this->belongsTo(Site::class);
-    }
-
-    public function shiftInstance()
-    {
-        return $this->belongsTo(ShiftInstance::class);
     }
 
     public function rosterAssignment()
