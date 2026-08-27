@@ -65,6 +65,50 @@ class EmployeeController extends Controller
         return response()->json($employee);
     }
 
+        /*
+    |---------------------------------------
+    | LINK EMPLOYEE TO USER ACCOUNT
+    | Admin ONLY
+    |
+    | Links an EXISTING Employee to an EXISTING User by id. Does not
+    | create new User accounts ΓÇö that's a separate, larger task (password
+    | handling, etc.) not in scope here. Blocks re-linking an already-
+    | linked Employee (must be unlinked first ΓÇö no unlink endpoint yet,
+    | do it via tinker if needed) and blocks linking a User that's
+    | already linked to a different Employee.
+    |---------------------------------------
+    */
+    public function linkUser(Request $request, $id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        if ($employee->user_id) {
+            return response()->json([
+                'message' => 'Employee already has a linked user account. Unlink first before relinking.'
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $alreadyLinked = Employee::where('user_id', $validated['user_id'])->exists();
+
+        if ($alreadyLinked) {
+            return response()->json([
+                'message' => 'This user account is already linked to another employee.'
+            ], 422);
+        }
+
+        $employee->user_id = $validated['user_id'];
+        $employee->save();
+
+        return response()->json([
+            'message' => 'Employee linked to user account successfully',
+            'data' => $employee->load('user')
+        ]);
+    }
+
     /*
     |---------------------------------------
     | UPDATE EMPLOYEE

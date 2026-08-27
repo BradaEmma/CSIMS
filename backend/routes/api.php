@@ -318,7 +318,7 @@ Route::prefix('v1')->group(function () {
         | EMPLOYEES MODULE
         |------------------------------------------------------------------
         */
-                Route::prefix('employees')->group(function () {
+            Route::prefix('employees')->group(function () {
 
             Route::middleware('role:admin')->group(function () {
                 Route::get('/',     [EmployeeController::class, 'index']);
@@ -329,6 +329,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('/',        [EmployeeController::class, 'store']);
                 Route::put('/{id}',     [EmployeeController::class, 'update']);
                 Route::delete('/{id}',  [EmployeeController::class, 'destroy']);
+                Route::put('/{id}/link-user', [EmployeeController::class, 'linkUser']);
             });
         });
 
