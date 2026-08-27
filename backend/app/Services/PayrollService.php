@@ -169,11 +169,34 @@ class PayrollService
             return ['success' => false, 'message' => 'Invalid or inactive deduction type'];
         }
 
+        $guard = Guard::find($guardId);
+
+        if (!$guard) {
+            return ['success' => false, 'message' => 'Guard not found'];
+        }
+
         $amount = $amountOverride ?? $type->default_value;
 
         if ($type->calculation_type === 'percentage') {
-            $guard = Guard::find($guardId);
             $amount = ($guard->daily_rate ?? 0) * ($amount / 100);
+        }
+
+        // Safety ceiling: catches data-entry errors (e.g. an extra zero)
+        // before they corrupt payroll. Configurable via the
+        // max_deduction_multiplier PayrollSetting rather than hardcoded,
+        // matching how nssf_employee_rate / standard_shift_hours work.
+        // Guards with no daily_rate set are skipped (nothing to compare
+        // against), same guard-clause pattern used elsewhere in this file.
+        if ($guard->daily_rate) {
+            $maxMultiplier = (float) (PayrollSetting::where('key', 'max_deduction_multiplier')->value('value') ?? 31);
+            $ceiling = $guard->daily_rate * $maxMultiplier;
+
+            if ($amount > $ceiling) {
+                return [
+                    'success' => false,
+                    'message' => "Deduction amount ({$amount}) exceeds the safety ceiling ({$ceiling}) for this guard's daily rate — please double check the figure.",
+                ];
+            }
         }
 
         $deduction = PayrollDeduction::create([
@@ -188,7 +211,7 @@ class PayrollService
         return ['success' => true, 'data' => $deduction];
     }
 
-        public function updateStatus(int $recordId, string $status, ?int $actingUserId = null): array
+    public function updateStatus(int $recordId, string $status, ?int $actingUserId = null): array
     {
         if (!in_array($status, ['draft', 'finalized', 'paid'], true)) {
             return ['success' => false, 'message' => 'Invalid status'];
