@@ -370,9 +370,13 @@ Route::prefix('v1')->group(function () {
         | ADMIN SANDBOX (remove before production)
         |------------------------------------------------------------------
         */
-        Route::middleware('role:admin')->get('/admin-test', fn() => response()->json([
+                Route::middleware('role:admin')->get('/admin-test', fn() => response()->json([
             'message' => 'Admin access confirmed',
             'time'    => now()->toDateTimeString(),
+        ]));
+
+        Route::middleware('manager.department:operations')->get('/manager-test-ops', fn() => response()->json([
+            'message' => 'Operations manager access confirmed',
         ]));
 
     });
