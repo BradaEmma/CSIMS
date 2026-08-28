@@ -375,9 +375,6 @@ Route::prefix('v1')->group(function () {
             'time'    => now()->toDateTimeString(),
         ]));
 
-        Route::middleware('manager.department:operations')->get('/manager-test-ops', fn() => response()->json([
-            'message' => 'Operations manager access confirmed',
-        ]));
 
     });
 });

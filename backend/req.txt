@@ -1,0 +1,2 @@
+url = "http://127.0.0.1:8000/api/v1/manager-test-ops" 
+header = "Authorization: Bearer 71|8R8QzG6OSEgkJ8xs3KmNPVkuVhPzeP2rUN1fi0NZc3b98e3a" 
