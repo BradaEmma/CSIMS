@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Department;
 
 class User extends Authenticatable
 {
@@ -23,9 +24,14 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    public function employee()
+        public function employee()
     {
         return $this->hasOne(Employee::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 
     protected function casts(): array
