@@ -282,7 +282,7 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('clients')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('role:admin')->group(function () {
                 Route::get('/',     [ClientController::class, 'index']);
                 Route::get('/{id}', [ClientController::class, 'show']);
             });
@@ -301,11 +301,10 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('contracts')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('role:admin')->group(function () {
                 Route::get('/',     [ContractController::class, 'index']);
                 Route::get('/{id}', [ContractController::class, 'show']);
             });
-
             Route::middleware('role:admin')->group(function () {
                 Route::post('/',        [ContractController::class, 'store']);
                 Route::put('/{id}',     [ContractController::class, 'update']);
@@ -340,7 +339,7 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('departments')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('role:admin')->group(function () {
                 Route::get('/',     [DepartmentController::class, 'index']);
                 Route::get('/{id}', [DepartmentController::class, 'show']);
             });

@@ -31,21 +31,21 @@ const navGroups = [
     {
     label: null,
     items: [
-      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'supervisor'] },
       { label: 'Approvals', path: '/approvals', icon: ClipboardCheck },
     ],
   },
   {
     label: 'Operations',
     items: [
-      { label: 'Clients', path: '/clients', icon: Briefcase },
-      { label: 'Contracts', path: '/contracts', icon: FileText },
-      { label: 'Guards', path: '/guards', icon: Users },
+      { label: 'Clients', path: '/clients', icon: Briefcase, roles: ['admin'] },
+      { label: 'Contracts', path: '/contracts', icon: FileText, roles: ['admin'] },
+      { label: 'Guards', path: '/guards', icon: Users, roles: ['admin', 'supervisor'] },
       { label: 'Assignments', path: '/assignments', icon: UserPlus, roles: ['admin', 'supervisor'] },
-      { label: 'Sites', path: '/sites', icon: Building2 },
-      { label: 'Roster', path: '/roster', icon: CalendarDays },
-      { label: 'Attendance', path: '/attendance', icon: CheckSquare },
-      { label: 'Incidents', path: '/incidents', icon: AlertTriangle },
+      { label: 'Sites', path: '/sites', icon: Building2, roles: ['admin', 'supervisor'] },
+      { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'supervisor'] },
+      { label: 'Attendance', path: '/attendance', icon: CheckSquare, roles: ['admin', 'supervisor'] },
+      { label: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['admin', 'supervisor'] },
       { label: 'Reports', path: '/reports', icon: BarChart3 },
     ],
   },
@@ -53,15 +53,15 @@ const navGroups = [
     label: 'HR',
     items: [
       { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin'] },
-      { label: 'Departments', path: '/departments', icon: Landmark },
+      { label: 'Departments', path: '/departments', icon: Landmark, roles: ['admin'] },
     ],
   },
   {
     label: 'Payroll & Finance',
     items: [
-      { label: 'Payroll', path: '/payroll', icon: Wallet },
+      { label: 'Payroll', path: '/payroll', icon: Wallet, roles: ['admin'] },
       { label: 'Payments', path: '/payments', icon: CreditCard },
-      { label: 'Deductions', path: '/deductions', icon: MinusCircle },
+      { label: 'Deductions', path: '/deductions', icon: MinusCircle, roles: ['admin'] },
     ],
   },
   {
