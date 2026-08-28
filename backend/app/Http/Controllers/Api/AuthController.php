@@ -24,6 +24,8 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $user->load('employee');
+
         return response()->json([
             'user' => $user,
             'token' => $user->createToken('csims-token')->plainTextToken,
