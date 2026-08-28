@@ -17,6 +17,9 @@ function StatusBadge({ status }) {
 }
 
 function Clients() {
+  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
+  const canManage = roles.includes('admin')
+
   const [clients, setClients] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -85,12 +88,14 @@ function Clients() {
             <h2 className="text-sm font-bold text-slate-800">
               All Clients ({clients.length})
             </h2>
-            <button
-              onClick={openAddModal}
-              className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
-            >
-              + Add Client
-            </button>
+            {canManage && (
+              <button
+                onClick={openAddModal}
+                className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
+              >
+                + Add Client
+              </button>
+            )}
           </div>
 
           <table className="w-full text-sm">
@@ -101,7 +106,7 @@ function Clients() {
                 <th className="pb-2">Phone</th>
                 <th className="pb-2">Email</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">Actions</th>
+                {canManage && <th className="pb-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -112,21 +117,23 @@ function Clients() {
                   <td className="py-2.5 text-slate-600">{client.phone || '—'}</td>
                   <td className="py-2.5 text-slate-600">{client.email || '—'}</td>
                   <td className="py-2.5"><StatusBadge status={client.status} /></td>
-                  <td className="py-2.5">
-                    <button
-                      onClick={() => openEditModal(client)}
-                      className="text-primary hover:underline text-xs font-medium mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(client)}
-                      disabled={deletingId === client.id}
-                      className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                    >
-                      {deletingId === client.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="py-2.5">
+                      <button
+                        onClick={() => openEditModal(client)}
+                        className="text-primary hover:underline text-xs font-medium mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(client)}
+                        disabled={deletingId === client.id}
+                        className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                      >
+                        {deletingId === client.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -138,7 +145,7 @@ function Clients() {
         </div>
       )}
 
-      {modalOpen && (
+      {modalOpen && canManage && (
         <ClientModal
           client={editingClient}
           onClose={() => setModalOpen(false)}
@@ -146,7 +153,7 @@ function Clients() {
         />
       )}
 
-      {confirmingClient && (
+      {confirmingClient && canManage && (
         <ConfirmModal
           title="Delete Client"
           message={`Delete ${confirmingClient.name}? This cannot be undone.`}

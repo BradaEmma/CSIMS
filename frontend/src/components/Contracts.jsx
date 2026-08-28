@@ -23,6 +23,9 @@ function formatCurrency(value) {
 }
 
 function Contracts() {
+  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
+  const canManage = roles.includes('admin')
+
   const [contracts, setContracts] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -91,12 +94,14 @@ function Contracts() {
             <h2 className="text-sm font-bold text-slate-800">
               All Contracts ({contracts.length})
             </h2>
-            <button
-              onClick={openAddModal}
-              className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
-            >
-              + Add Contract
-            </button>
+            {canManage && (
+              <button
+                onClick={openAddModal}
+                className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
+              >
+                + Add Contract
+              </button>
+            )}
           </div>
 
           <table className="w-full text-sm">
@@ -109,7 +114,7 @@ function Contracts() {
                 <th className="pb-2">Monthly Fee</th>
                 <th className="pb-2">Sites</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">Actions</th>
+                {canManage && <th className="pb-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -122,21 +127,23 @@ function Contracts() {
                   <td className="py-2.5 text-slate-600">{formatCurrency(contract.monthly_fee)}</td>
                   <td className="py-2.5 text-slate-600">{contract.sites?.length || 0}</td>
                   <td className="py-2.5"><StatusBadge status={contract.status} /></td>
-                  <td className="py-2.5">
-                    <button
-                      onClick={() => openEditModal(contract)}
-                      className="text-primary hover:underline text-xs font-medium mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(contract)}
-                      disabled={deletingId === contract.id}
-                      className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                    >
-                      {deletingId === contract.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="py-2.5">
+                      <button
+                        onClick={() => openEditModal(contract)}
+                        className="text-primary hover:underline text-xs font-medium mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(contract)}
+                        disabled={deletingId === contract.id}
+                        className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                      >
+                        {deletingId === contract.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -148,7 +155,7 @@ function Contracts() {
         </div>
       )}
 
-            {modalOpen && (
+            {modalOpen && canManage && (
         <ContractModal
           contract={editingContract}
           onClose={() => setModalOpen(false)}
@@ -156,7 +163,7 @@ function Contracts() {
         />
       )}
 
-      {confirmingContract && (
+      {confirmingContract && canManage && (
         <ConfirmModal
           title="Delete Contract"
           message={`Delete contract ${confirmingContract.reference_number}? This cannot be undone.`}

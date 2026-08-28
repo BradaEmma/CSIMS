@@ -17,6 +17,9 @@ function StatusBadge({ status }) {
 }
 
 function Employees() {
+  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
+  const canManage = roles.includes('admin')
+
   const [employees, setEmployees] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -85,12 +88,14 @@ function Employees() {
             <h2 className="text-sm font-bold text-slate-800">
               All Employees ({employees.length})
             </h2>
-            <button
-              onClick={openAddModal}
-              className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
-            >
-              + Add Employee
-            </button>
+            {canManage && (
+              <button
+                onClick={openAddModal}
+                className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
+              >
+                + Add Employee
+              </button>
+            )}
           </div>
 
           <table className="w-full text-sm">
@@ -101,7 +106,7 @@ function Employees() {
                 <th className="pb-2">Department</th>
                 <th className="pb-2">Position</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">Actions</th>
+                {canManage && <th className="pb-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -112,21 +117,23 @@ function Employees() {
                   <td className="py-2.5 text-slate-600">{employee.department?.name || '—'}</td>
                   <td className="py-2.5 text-slate-600">{employee.position || '—'}</td>
                   <td className="py-2.5"><StatusBadge status={employee.status} /></td>
-                  <td className="py-2.5">
-                    <button
-                      onClick={() => openEditModal(employee)}
-                      className="text-primary hover:underline text-xs font-medium mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(employee)}
-                      disabled={deletingId === employee.id}
-                      className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                    >
-                      {deletingId === employee.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="py-2.5">
+                      <button
+                        onClick={() => openEditModal(employee)}
+                        className="text-primary hover:underline text-xs font-medium mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(employee)}
+                        disabled={deletingId === employee.id}
+                        className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                      >
+                        {deletingId === employee.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -138,7 +145,7 @@ function Employees() {
         </div>
       )}
 
-            {modalOpen && (
+            {modalOpen && canManage && (
         <EmployeeModal
           employee={editingEmployee}
           onClose={() => setModalOpen(false)}
@@ -146,7 +153,7 @@ function Employees() {
         />
       )}
 
-      {confirmingEmployee && (
+      {confirmingEmployee && canManage && (
         <ConfirmModal
           title="Delete Employee"
           message={`Delete ${confirmingEmployee.name}? This cannot be undone.`}

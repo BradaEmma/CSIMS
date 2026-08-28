@@ -16,6 +16,9 @@ function StatusBadge({ isActive }) {
 }
 
 function Departments() {
+  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
+  const canManage = roles.includes('admin')
+
   const [departments, setDepartments] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -84,12 +87,14 @@ function Departments() {
             <h2 className="text-sm font-bold text-slate-800">
               All Departments ({departments.length})
             </h2>
-            <button
-              onClick={openAddModal}
-              className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
-            >
-              + Add Department
-            </button>
+            {canManage && (
+              <button
+                onClick={openAddModal}
+                className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
+              >
+                + Add Department
+              </button>
+            )}
           </div>
 
           <table className="w-full text-sm">
@@ -98,7 +103,7 @@ function Departments() {
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Description</th>
                 <th className="pb-2">Status</th>
-                <th className="pb-2">Actions</th>
+                {canManage && <th className="pb-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -107,21 +112,23 @@ function Departments() {
                   <td className="py-2.5 font-medium text-slate-700">{department.name}</td>
                   <td className="py-2.5 text-slate-600">{department.description || '—'}</td>
                   <td className="py-2.5"><StatusBadge isActive={department.is_active} /></td>
-                  <td className="py-2.5">
-                    <button
-                      onClick={() => openEditModal(department)}
-                      className="text-primary hover:underline text-xs font-medium mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(department)}
-                      disabled={deletingId === department.id}
-                      className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                    >
-                      {deletingId === department.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="py-2.5">
+                      <button
+                        onClick={() => openEditModal(department)}
+                        className="text-primary hover:underline text-xs font-medium mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(department)}
+                        disabled={deletingId === department.id}
+                        className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                      >
+                        {deletingId === department.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -133,7 +140,7 @@ function Departments() {
         </div>
       )}
 
-            {modalOpen && (
+            {modalOpen && canManage && (
         <DepartmentModal
           department={editingDepartment}
           onClose={() => setModalOpen(false)}
@@ -141,7 +148,7 @@ function Departments() {
         />
       )}
 
-      {confirmingDepartment && (
+      {confirmingDepartment && canManage && (
         <ConfirmModal
           title="Delete Department"
           message={`Delete ${confirmingDepartment.name}? This cannot be undone.`}
