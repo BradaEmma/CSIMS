@@ -319,7 +319,7 @@ Route::prefix('v1')->group(function () {
         */
             Route::prefix('employees')->group(function () {
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:employees.view')->group(function () {
                 Route::get('/',     [EmployeeController::class, 'index']);
                 Route::get('/{id}', [EmployeeController::class, 'show']);
             });

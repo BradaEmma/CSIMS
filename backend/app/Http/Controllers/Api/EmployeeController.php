@@ -17,9 +17,10 @@ class EmployeeController extends Controller
     */
     public function index()
     {
-        return response()->json(
-            Employee::with(['department', 'creator'])->latest()->get()
-        );
+        $query = Employee::with(['department', 'creator'])->latest();
+        $query = \App\Services\DepartmentScopeService::apply($query, Auth::user());
+
+        return response()->json($query->get());
     }
 
     /*
