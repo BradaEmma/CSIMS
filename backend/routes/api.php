@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\ApprovalController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -329,6 +330,22 @@ Route::prefix('v1')->group(function () {
                 Route::put('/{id}',     [EmployeeController::class, 'update']);
                 Route::delete('/{id}',  [EmployeeController::class, 'destroy']);
                 Route::put('/{id}/link-user', [EmployeeController::class, 'linkUser']);
+            });
+        });
+
+        /*
+        |------------------------------------------------------------------
+        | USERS MODULE
+        | Admin ONLY ΓÇö user creation/role assignment is sensitive enough
+        | to stay role-gated rather than permission-based for now.
+        |------------------------------------------------------------------
+        */
+            Route::prefix('users')->group(function () {
+
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/',      [UserController::class, 'index']);
+                Route::post('/',     [UserController::class, 'store']);
+                Route::put('/{id}',  [UserController::class, 'update']);
             });
         });
 
