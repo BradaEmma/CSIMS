@@ -32,7 +32,7 @@ const navGroups = [
     label: null,
     items: [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'supervisor'] },
-            { label: 'Approvals', path: '/approvals', icon: ClipboardCheck, roles: ['admin', 'manager', 'accountant'] },
+      { label: 'Approvals', path: '/approvals', icon: ClipboardCheck, roles: ['admin', 'manager', 'accountant'] },
     ],
   },
   {
@@ -52,8 +52,8 @@ const navGroups = [
   {
     label: 'HR',
     items: [
-      { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin'] },
-      { label: 'Departments', path: '/departments', icon: Landmark, roles: ['admin'] },
+      { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin', 'hr'] },
+      { label: 'Departments', path: '/departments', icon: Landmark, roles: ['admin', 'hr'] },
     ],
   },
   {

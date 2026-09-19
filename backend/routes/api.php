@@ -78,18 +78,17 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('sites')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('permission:sites.view')->group(function () {
                 Route::get('/',        [SiteController::class, 'index']);
                 Route::get('/{id}',    [SiteController::class, 'show']);
             });
 
-            Route::middleware('role:admin|manager')->group(function () {
+            Route::middleware('permission:sites.manage')->group(function () {
                 Route::post('/',       [SiteController::class, 'store']);
                 Route::put('/{id}',    [SiteController::class, 'update']);
                 Route::delete('/{id}', [SiteController::class, 'destroy']);
             });
         });
-
                 /*
         |------------------------------------------------------------------
         | POSTS MODULE
@@ -99,21 +98,21 @@ Route::prefix('v1')->group(function () {
         | listing/creation; flat /posts/{id} for direct show/update/delete.
         |------------------------------------------------------------------
         */
-        Route::prefix('sites/{siteId}/posts')->middleware('role:admin|supervisor')->group(function () {
+        Route::prefix('sites/{siteId}/posts')->middleware('permission:sites.view')->group(function () {
             Route::get('/', [PostController::class, 'index']);
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:sites.manage')->group(function () {
                 Route::post('/', [PostController::class, 'store']);
             });
         });
 
         Route::prefix('posts')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('permission:sites.view')->group(function () {
                 Route::get('/{id}', [PostController::class, 'show']);
             });
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:sites.manage')->group(function () {
                 Route::put('/{id}',    [PostController::class, 'update']);
                 Route::delete('/{id}', [PostController::class, 'destroy']);
             });

@@ -45,7 +45,7 @@ class PermissionSeeder extends Seeder
                 // department-scoped access is enforced by middleware,
                 // not by narrowing this list further
                 'clients.view', 'contracts.view',
-                'sites.view', 'guards.view',
+                'sites.view', 'sites.manage', 'guards.view',
                 'employees.view',
                 'departments.view',
                 'roster.view',

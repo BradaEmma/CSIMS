@@ -18,7 +18,7 @@ function StatusBadge({ status }) {
 
 function Employees() {
   const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin')
+  const canManage = roles.includes('admin') || roles.includes('hr')
 
   const [employees, setEmployees] = useState([])
   const [error, setError] = useState('')
