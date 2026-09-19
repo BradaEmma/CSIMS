@@ -175,12 +175,12 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('roster')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('permission:roster.view')->group(function () {
                 Route::get('/',         [RosterController::class, 'index']);
                 Route::get('/{date}',   [RosterController::class, 'showDate']);
             });
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:roster.generate')->group(function () {
                 Route::post('/generate',      [RosterController::class, 'generate']);
                 Route::post('/assign-double', [RosterController::class, 'assignDouble']);
                 Route::delete('/{id}',        [RosterController::class, 'destroy']);
