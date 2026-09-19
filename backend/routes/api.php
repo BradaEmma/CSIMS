@@ -125,7 +125,7 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('guards')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('role:admin|supervisor|manager')->group(function () {
                 Route::get('/',     [GuardController::class, 'index']);
                 Route::get('/{id}', [GuardController::class, 'show']);
             });
@@ -192,7 +192,7 @@ Route::prefix('v1')->group(function () {
         | DASHBOARD MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('dashboard')->middleware('role:admin|supervisor')->group(function () {
+                Route::prefix('dashboard')->middleware('role:admin|supervisor|manager')->group(function () {
             Route::get('/live-shift',  [DashboardController::class, 'liveShift']);
             Route::get('/admin',       [DashboardController::class, 'adminSummary']);
             Route::get('/supervisor',  [SupervisorDashboardController::class, 'index']);
@@ -208,10 +208,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/',                 [IncidentController::class, 'store']);
             Route::post('/{id}/attachments', [IncidentController::class, 'uploadAttachment']);
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+        Route::middleware('permission:incidents.view')->group(function () {
                 Route::get('/',               [IncidentController::class, 'index']);
                 Route::get('/summary',        [IncidentController::class, 'summary']);
                 Route::get('/{id}',           [IncidentController::class, 'show']);
+            });
+
+            Route::middleware('permission:incidents.manage')->group(function () {
                 Route::post('/{id}/resolve',  [IncidentController::class, 'resolve']);
                 Route::patch('/{id}/status',  [IncidentController::class, 'updateStatus']);
             });
@@ -262,17 +265,26 @@ Route::prefix('v1')->group(function () {
         | Everything here is admin-only — payroll is sensitive financial data.
         |------------------------------------------------------------------
         */
-        Route::prefix('payroll')->middleware('role:admin')->group(function () {
-            Route::get('/',                    [PayrollController::class, 'index']);
-            Route::post('/generate',           [PayrollController::class, 'generate']);
-            Route::post('/generate-bulk',      [PayrollController::class, 'generateBulk']);
-            Route::post('/deductions',         [PayrollController::class, 'addDeduction']);
-            Route::get('/deduction-types',     [PayrollController::class, 'deductionTypes']);
-            Route::post('/deduction-types',    [PayrollController::class, 'storeDeductionType']);
-            Route::get('/settings',            [PayrollController::class, 'settings']);
-            Route::put('/settings/{key}',      [PayrollController::class, 'updateSetting']);
-            Route::get('/{id}',                [PayrollController::class, 'show']);
-            Route::patch('/{id}/status',       [PayrollController::class, 'updateStatus']);
+        Route::prefix('payroll')->group(function () {
+
+            Route::middleware('permission:payroll.view')->group(function () {
+                Route::get('/',                [PayrollController::class, 'index']);
+                Route::get('/deduction-types',  [PayrollController::class, 'deductionTypes']);
+                Route::get('/{id}',             [PayrollController::class, 'show']);
+            });
+
+            Route::middleware('permission:payroll.manage')->group(function () {
+                Route::post('/generate',        [PayrollController::class, 'generate']);
+                Route::post('/generate-bulk',   [PayrollController::class, 'generateBulk']);
+                Route::post('/deductions',      [PayrollController::class, 'addDeduction']);
+                Route::post('/deduction-types', [PayrollController::class, 'storeDeductionType']);
+                Route::patch('/{id}/status',    [PayrollController::class, 'updateStatus']);
+            });
+
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/settings',         [PayrollController::class, 'settings']);
+                Route::put('/settings/{key}',   [PayrollController::class, 'updateSetting']);
+            });
         });
 
         /*

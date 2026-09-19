@@ -49,6 +49,7 @@ class PermissionSeeder extends Seeder
                 'employees.view',
                 'departments.view',
                 'roster.view', 'roster.generate',
+                'incidents.view'
             ],
 
             'hr' => [

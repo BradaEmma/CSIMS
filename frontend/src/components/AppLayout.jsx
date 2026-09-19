@@ -31,7 +31,7 @@ const navGroups = [
   {
     label: null,
     items: [
-      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'supervisor'] },
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'supervisor', 'manager', 'hr', 'accountant'] },
       { label: 'Approvals', path: '/approvals', icon: ClipboardCheck, roles: ['admin', 'manager', 'accountant'] },
     ],
   },
@@ -59,9 +59,9 @@ const navGroups = [
   {
     label: 'Payroll & Finance',
     items: [
-      { label: 'Payroll', path: '/payroll', icon: Wallet, roles: ['admin'] },
+      { label: 'Payroll', path: '/payroll', icon: Wallet, roles: ['admin', 'accountant'] },
       { label: 'Payments', path: '/payments', icon: CreditCard, roles: ['admin', 'accountant'] },
-      { label: 'Deductions', path: '/deductions', icon: MinusCircle, roles: ['admin'] },
+      { label: 'Deductions', path: '/deductions', icon: MinusCircle, roles: ['admin', 'accountant'] },
     ],
   },
   {
