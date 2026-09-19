@@ -83,7 +83,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/{id}',    [SiteController::class, 'show']);
             });
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('role:admin|manager')->group(function () {
                 Route::post('/',       [SiteController::class, 'store']);
                 Route::put('/{id}',    [SiteController::class, 'update']);
                 Route::delete('/{id}', [SiteController::class, 'destroy']);

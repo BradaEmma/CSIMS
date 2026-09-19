@@ -18,6 +18,9 @@ function StatusBadge({ status }) {
 }
 
 function Sites() {
+  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
+  const canManage = roles.includes('admin') || roles.includes('manager')
+
   const [sites, setSites] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -134,12 +137,14 @@ function Sites() {
             <h2 className="text-sm font-bold text-slate-800">
               All Sites ({sites.length})
             </h2>
-            <button
-              onClick={openAddModal}
-              className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
-            >
-              + Add Site
-            </button>
+              {canManage && (
+              <button
+                onClick={openAddModal}
+                className="bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary transition"
+              >
+                + Add Site
+              </button>
+            )}
           </div>
 
           <table className="w-full text-sm">
@@ -175,20 +180,24 @@ function Sites() {
                       <td className="py-2.5 text-slate-600">{site.location || '—'}</td>
                       <td className="py-2.5 text-slate-600">{posts.length}</td>
                       <td className="py-2.5"><StatusBadge status={site.status} /></td>
-                      <td className="py-2.5">
-                        <button
-                          onClick={() => openEditModal(site)}
-                          className="text-primary hover:underline text-xs font-medium mr-3"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(site)}
-                          disabled={deletingId === site.id}
-                          className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                        >
-                          {deletingId === site.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                       <td className="py-2.5">
+                        {canManage && (
+                          <>
+                            <button
+                              onClick={() => openEditModal(site)}
+                              className="text-primary hover:underline text-xs font-medium mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(site)}
+                              disabled={deletingId === site.id}
+                              className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                            >
+                              {deletingId === site.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
 
@@ -201,12 +210,14 @@ function Sites() {
                               <h3 className="text-xs font-bold text-slate-600 uppercase">
                                 Posts at {site.name}
                               </h3>
-                              <button
-                                onClick={() => openAddPostModal(site.id)}
-                                className="text-primary hover:underline text-xs font-medium"
-                              >
-                                + Add Post
-                              </button>
+                                {canManage && (
+                                <button
+                                  onClick={() => openAddPostModal(site.id)}
+                                  className="text-primary hover:underline text-xs font-medium"
+                                >
+                                  + Add Post
+                                </button>
+                              )}
                             </div>
 
                             {posts.length === 0 ? (
@@ -231,20 +242,24 @@ function Sites() {
                                       <td className="py-2 text-slate-600">{post.morning_guards_required}</td>
                                       <td className="py-2 text-slate-600">{post.night_guards_required}</td>
                                       <td className="py-2"><StatusBadge status={post.status} /></td>
-                                      <td className="py-2">
-                                        <button
-                                          onClick={() => openEditPostModal(site.id, post)}
-                                          className="text-primary hover:underline text-xs font-medium mr-3"
-                                        >
-                                          Edit
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeletePost(post)}
-                                          disabled={deletingPostId === post.id}
-                                          className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
-                                        >
-                                          {deletingPostId === post.id ? 'Deleting...' : 'Delete'}
-                                        </button>
+                                        <td className="py-2">
+                                        {canManage && (
+                                          <>
+                                            <button
+                                              onClick={() => openEditPostModal(site.id, post)}
+                                              className="text-primary hover:underline text-xs font-medium mr-3"
+                                            >
+                                              Edit
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeletePost(post)}
+                                              disabled={deletingPostId === post.id}
+                                              className="text-danger hover:underline text-xs font-medium disabled:opacity-50"
+                                            >
+                                              {deletingPostId === post.id ? 'Deleting...' : 'Delete'}
+                                            </button>
+                                          </>
+                                        )}
                                       </td>
                                     </tr>
                                   ))}
@@ -267,7 +282,7 @@ function Sites() {
         </div>
       )}
 
-      {modalOpen && (
+        {modalOpen && canManage && (
         <SiteModal
           site={editingSite}
           onClose={() => setModalOpen(false)}
@@ -275,7 +290,7 @@ function Sites() {
         />
       )}
 
-            {postModalOpen && (
+        {postModalOpen && canManage && (
         <PostModal
           siteId={postModalSiteId}
           post={editingPost}
@@ -284,7 +299,7 @@ function Sites() {
         />
       )}
 
-      {confirmingSite && (
+        {confirmingSite && canManage && (
         <ConfirmModal
           title="Delete Site"
           message={`Delete ${confirmingSite.name}? This cannot be undone.`}
@@ -294,7 +309,7 @@ function Sites() {
         />
       )}
 
-      {confirmingPost && (
+        {confirmingPost && canManage && (
         <ConfirmModal
           title="Delete Post"
           message={`Delete post "${confirmingPost.name}"? This cannot be undone.`}

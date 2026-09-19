@@ -14,6 +14,7 @@ import Departments from './components/Departments'
 import Employees from './components/Employees'
 import Approvals from './components/Approvals'
 import GuardAssignments from './components/GuardAssignments'
+import Users from './components/Users'
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('csims_token')
@@ -137,6 +138,14 @@ function App() {
             </ProtectedRoute>
          }
       /> 
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          }
+      />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

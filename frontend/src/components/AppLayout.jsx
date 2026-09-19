@@ -28,11 +28,11 @@ import logo from '../assets/logo.png'
 import NotificationBell from './NotificationBell'
 
 const navGroups = [
-    {
+  {
     label: null,
     items: [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'supervisor'] },
-      { label: 'Approvals', path: '/approvals', icon: ClipboardCheck },
+            { label: 'Approvals', path: '/approvals', icon: ClipboardCheck, roles: ['admin', 'manager', 'accountant'] },
     ],
   },
   {
@@ -40,10 +40,10 @@ const navGroups = [
     items: [
       { label: 'Clients', path: '/clients', icon: Briefcase, roles: ['admin'] },
       { label: 'Contracts', path: '/contracts', icon: FileText, roles: ['admin'] },
+      { label: 'Sites', path: '/sites', icon: Building2, roles: ['admin', 'supervisor', 'manager'] },
+      { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'manager'] },
       { label: 'Guards', path: '/guards', icon: Users, roles: ['admin', 'supervisor'] },
       { label: 'Assignments', path: '/assignments', icon: UserPlus, roles: ['admin', 'supervisor'] },
-      { label: 'Sites', path: '/sites', icon: Building2, roles: ['admin', 'supervisor'] },
-      { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'supervisor'] },
       { label: 'Attendance', path: '/attendance', icon: CheckSquare, roles: ['admin', 'supervisor'] },
       { label: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['admin', 'supervisor'] },
       { label: 'Reports', path: '/reports', icon: BarChart3 },
@@ -60,16 +60,16 @@ const navGroups = [
     label: 'Payroll & Finance',
     items: [
       { label: 'Payroll', path: '/payroll', icon: Wallet, roles: ['admin'] },
-      { label: 'Payments', path: '/payments', icon: CreditCard },
+      { label: 'Payments', path: '/payments', icon: CreditCard, roles: ['admin', 'accountant'] },
       { label: 'Deductions', path: '/deductions', icon: MinusCircle, roles: ['admin'] },
     ],
   },
   {
     label: 'Admin & Settings',
     items: [
-      { label: 'Users', path: '/users', icon: UserCog },
-      { label: 'Roles & Permissions', path: '/roles', icon: ShieldCheck },
-      { label: 'Settings', path: '/settings', icon: Settings },
+      { label: 'Users', path: '/users', icon: UserCog, roles: ['admin'] },
+      { label: 'Roles & Permissions', path: '/roles', icon: ShieldCheck, roles: ['admin'] },
+      { label: 'Settings', path: '/settings', icon: Settings, roles: ['admin'] },
     ],
   },
 ]
