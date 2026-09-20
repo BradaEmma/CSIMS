@@ -52,8 +52,8 @@ const navGroups = [
   {
     label: 'HR',
     items: [
-      { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin', 'hr'] },
-      { label: 'Departments', path: '/departments', icon: Landmark, roles: ['admin', 'hr'] },
+      { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin', 'hr', 'manager'] },
+      { label: 'Departments', path: '/departments', icon: Landmark, roles: ['admin', 'hr', 'manager'] },
     ],
   },
   {

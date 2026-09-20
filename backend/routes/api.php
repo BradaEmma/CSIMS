@@ -367,12 +367,12 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('departments')->group(function () {
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:departments.view')->group(function () {
                 Route::get('/',     [DepartmentController::class, 'index']);
                 Route::get('/{id}', [DepartmentController::class, 'show']);
             });
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:departments.manage')->group(function () {
                 Route::post('/',        [DepartmentController::class, 'store']);
                 Route::put('/{id}',     [DepartmentController::class, 'update']);
                 Route::delete('/{id}',  [DepartmentController::class, 'destroy']);
