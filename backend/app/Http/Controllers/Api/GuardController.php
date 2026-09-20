@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Guard;
 use App\Models\Employee;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,8 @@ class GuardController extends Controller
         ]);
 
         $guard = DB::transaction(function () use ($validated) {
+            $operationsDept = Department::where('name', 'Operations & Security')->first();
+
             $employee = Employee::create([
                 'name' => $validated['name'],
                 'phone' => $validated['phone'],
@@ -57,6 +60,7 @@ class GuardController extends Controller
                 'position' => 'Guard',
                 'status' => 'active',
                 'created_by' => Auth::id(),
+                'department_id' => $operationsDept?->id,
             ]);
 
             return Guard::create([
