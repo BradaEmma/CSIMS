@@ -27,7 +27,9 @@ function ApprovalDetailModal({ requestId, onClose }) {
           <div className="space-y-4">
             <div className="bg-slate-50 rounded-lg p-4 text-sm space-y-1">
               <p><span className="text-slate-400">Type:</span> {detail.approvable_type?.replace('_', ' ')}</p>
-              <p><span className="text-slate-400">Amount:</span> {detail.amount ? `TZS ${Number(detail.amount).toLocaleString()}` : '—'}</p>
+              {detail.approvable_summary && (
+                <p><span className="text-slate-400">Reason:</span> {detail.approvable_summary}</p>
+              )}
               <p><span className="text-slate-400">Status:</span> <span className="capitalize">{detail.status}</span></p>
               <p><span className="text-slate-400">Submitted by:</span> {detail.submitter?.name || '—'}</p>
               <p><span className="text-slate-400">Workflow:</span> {detail.workflow?.name}</p>
