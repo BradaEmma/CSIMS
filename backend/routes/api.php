@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\MoneyRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -247,6 +248,7 @@ Route::prefix('v1')->group(function () {
 
             Route::post('/',              [ApprovalController::class, 'submit']);
             Route::get('/pending',        [ApprovalController::class, 'pending']);
+            Route::get('/mine',           [ApprovalController::class, 'mine']);
             Route::get('/{id}',           [ApprovalController::class, 'show']);
             Route::post('/{id}/approve',  [ApprovalController::class, 'approve']);
             Route::post('/{id}/reject',   [ApprovalController::class, 'reject']);
@@ -391,6 +393,21 @@ Route::prefix('v1')->group(function () {
             Route::get('/',        [DocumentController::class, 'index']);
             Route::post('/',       [DocumentController::class, 'store']);
             Route::delete('/{id}', [DocumentController::class, 'destroy']);
+        });
+
+        /*
+        |------------------------------------------------------------------
+        | MONEY REQUESTS MODULE
+        | Submission is admin/manager only; the resulting approval chain
+        | is handled entirely by the generic Approvals engine above.
+        |------------------------------------------------------------------
+        */
+        Route::prefix('money-requests')->group(function () {
+            Route::get('/', [MoneyRequestController::class, 'index']);
+
+            Route::middleware('role:admin|manager')->group(function () {
+                Route::post('/', [MoneyRequestController::class, 'store']);
+            });
         });
 
         /*

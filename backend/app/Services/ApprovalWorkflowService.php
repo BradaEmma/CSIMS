@@ -17,6 +17,7 @@ class ApprovalWorkflowService
      */
     protected array $approvableMap = [
         'payroll_record' => \App\Models\PayrollRecord::class,
+        'money_request'  => \App\Models\MoneyRequest::class,
     ];
 
     /**
@@ -158,6 +159,11 @@ class ApprovalWorkflowService
             return ['success' => false, 'message' => "Request is not pending (current status: {$request->status})."];
         }
 
+        $actingUser = User::find($actingUserId);
+        if ($request->submitted_by !== $actingUserId && !$actingUser?->hasRole('admin')) {
+            return ['success' => false, 'message' => 'You are not authorized to cancel this request.'];
+        }
+
         ApprovalAction::create([
             'approval_request_id' => $request->id,
             'approval_workflow_level_id' => null,
@@ -193,6 +199,20 @@ class ApprovalWorkflowService
                 return $level && $userRoles->contains($level->approver_role);
             })
             ->values();
+
+        return ['success' => true, 'data' => $requests];
+    }
+
+    /**
+     * Every request the given user has ever submitted, any status —
+     * for tracking/history, not action. Newest first.
+     */
+    public function getSubmittedByUser(int $userId): array
+    {
+        $requests = ApprovalRequest::with(['workflow.levels', 'submitter'])
+            ->where('submitted_by', $userId)
+            ->orderByDesc('created_at')
+            ->get();
 
         return ['success' => true, 'data' => $requests];
     }

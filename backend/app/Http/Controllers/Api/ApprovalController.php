@@ -106,7 +106,7 @@ class ApprovalController extends Controller
         );
     }
 
-    /**
+        /**
      * GET /api/v1/approvals/pending
      * Requests where the current user is an eligible approver at the
      * request's current level.
@@ -114,6 +114,21 @@ class ApprovalController extends Controller
     public function pending(Request $request): JsonResponse
     {
         $result = $this->approvalService->getPendingForUser($request->user()->id);
+
+        return response()->json(
+            ['message' => $result['message'] ?? null, 'data' => $result['data'] ?? null],
+            $result['success'] ? 200 : 422
+        );
+    }
+
+    /**
+     * GET /api/v1/approvals/mine
+     * Every request the current user has submitted, any status —
+     * for tracking, not action.
+     */
+    public function mine(Request $request): JsonResponse
+    {
+        $result = $this->approvalService->getSubmittedByUser($request->user()->id);
 
         return response()->json(
             ['message' => $result['message'] ?? null, 'data' => $result['data'] ?? null],
