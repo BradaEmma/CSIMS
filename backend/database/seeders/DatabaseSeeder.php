@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             PermissionSeeder::class,
             MoneyRequestWorkflowSeeder::class,
+            PayrollSettingsSeeder::class,
         ]);
     }
 }
