@@ -8,6 +8,7 @@ class PayrollRecord extends Model
 {
     protected $fillable = [
         'guard_id',
+        'employee_id',
         'period',
         'days_worked',
         'overtime_days',
