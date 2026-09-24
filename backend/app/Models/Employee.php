@@ -19,10 +19,17 @@ class Employee extends Model
         'status',
         'hire_date',
         'created_by',
+        'pay_type',
+        'monthly_salary',
+        'nssf_applicable',
+        'paye_applicable',
     ];
 
     protected $casts = [
         'hire_date' => 'date',
+        'monthly_salary' => 'decimal:2',
+        'nssf_applicable' => 'boolean',
+        'paye_applicable' => 'boolean',
     ];
 
     public function department()
