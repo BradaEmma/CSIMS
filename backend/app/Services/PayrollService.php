@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\Employee;
 use App\Models\Guard;
 use App\Models\PayrollRecord;
 use App\Models\PayrollSetting;
@@ -10,9 +11,9 @@ use App\Models\PayrollTaxBracket;
 use App\Models\PayrollDeduction;
 use App\Models\PayrollDeductionType;
 use App\Models\RosterAssignment;
-use Illuminate\Support\Facades\DB;
 use App\Models\ApprovalRequest;
-use App\Services\ApprovalWorkflowService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PayrollService
 {
@@ -53,14 +54,9 @@ class PayrollService
 
             $grossPay = $daysWorked * $guard->daily_rate;
 
-            // Rest-day premium: is_overtime days are already paid at the normal
-            // 1.0x rate within $grossPay above; this adds the extra 0.5x (or
-            // whatever restday_overtime_multiplier - 1 currently is) on top.
             $restDayMultiplier = (float) (PayrollSetting::where('key', 'restday_overtime_multiplier')->value('value') ?? 1.5);
             $restDayPremium = $overtimeDays * $guard->daily_rate * ($restDayMultiplier - 1);
 
-            // Extra-hour overtime: hours actually worked beyond the standard
-            // shift length on any day, paid at the extra-hours multiplier.
             $standardShiftHours = (float) (PayrollSetting::where('key', 'standard_shift_hours')->value('value') ?? 12);
             $extraHoursMultiplier = (float) (PayrollSetting::where('key', 'extra_hours_overtime_multiplier')->value('value') ?? 1.0);
             $hourlyRate = $guard->daily_rate / $standardShiftHours;
@@ -104,6 +100,7 @@ class PayrollService
                 'paye_deduction'          => $payeDeduction,
                 'other_deductions_total'  => $otherDeductions,
                 'net_pay'                 => $netPay,
+                'employee_id'             => $guard->employee_id,
             ];
 
             if ($existing) {
@@ -114,6 +111,90 @@ class PayrollService
                     'guard_id' => $guardId,
                     'period'   => $period,
                     'status'   => 'draft',
+                ]));
+            }
+
+            return ['success' => true, 'data' => $record];
+        });
+    }
+
+    /**
+     * Salaried staff: fixed monthly salary. No roster / days_worked.
+     * Same NSSF + PAYE rules as guards (Tanzania Mainland private sector).
+     */
+    public function generatePayrollForSalariedEmployee(int $employeeId, string $period): array
+    {
+        return DB::transaction(function () use ($employeeId, $period) {
+            $employee = Employee::find($employeeId);
+
+            if (!$employee) {
+                return ['success' => false, 'message' => 'Employee not found'];
+            }
+
+            if (($employee->pay_type ?? null) !== 'monthly') {
+                return ['success' => false, 'message' => 'Employee is not set to monthly pay_type'];
+            }
+
+            if (!$employee->monthly_salary || $employee->monthly_salary <= 0) {
+                return ['success' => false, 'message' => 'Employee has no monthly_salary set — cannot calculate payroll'];
+            }
+
+            $existing = PayrollRecord::where('employee_id', $employeeId)
+                ->where('period', $period)
+                ->first();
+
+            if ($existing && $existing->status !== 'draft') {
+                return ['success' => false, 'message' => "Payroll is already {$existing->status} for this period — cannot regenerate"];
+            }
+
+            $grossPay = (float) $employee->monthly_salary;
+            $overtimePay = 0.0;
+            $totalGross = $grossPay + $overtimePay;
+
+            $nssfApplicable = (bool) ($employee->nssf_applicable ?? true);
+            $payeApplicable = (bool) ($employee->paye_applicable ?? true);
+
+            $nssfDeduction = 0.0;
+            if ($nssfApplicable) {
+                $nssfRate = (float) (PayrollSetting::where('key', 'nssf_employee_rate')->value('value') ?? 10);
+                $nssfDeduction = round($totalGross * ($nssfRate / 100), 2);
+            }
+
+            $payeDeduction = 0.0;
+            if ($payeApplicable) {
+                $payeIncome = $totalGross - $nssfDeduction;
+                $payeDeduction = $this->calculatePaye($payeIncome);
+            }
+
+            $otherDeductions = 0.0;
+            if (Schema::hasColumn('payroll_deductions', 'employee_id')) {
+                $otherDeductions = (float) PayrollDeduction::where('employee_id', $employeeId)
+                    ->where('period', $period)
+                    ->sum('amount');
+            }
+
+            $netPay = $totalGross - $nssfDeduction - $payeDeduction - $otherDeductions;
+
+            $data = [
+                'days_worked'            => 0,
+                'overtime_days'          => 0,
+                'gross_pay'              => $grossPay,
+                'overtime_pay'           => $overtimePay,
+                'nssf_deduction'         => $nssfDeduction,
+                'paye_deduction'         => $payeDeduction,
+                'other_deductions_total' => $otherDeductions,
+                'net_pay'                => $netPay,
+            ];
+
+            if ($existing) {
+                $existing->update($data);
+                $record = $existing->fresh();
+            } else {
+                $record = PayrollRecord::create(array_merge($data, [
+                    'employee_id' => $employeeId,
+                    'guard_id'    => null,
+                    'period'      => $period,
+                    'status'      => 'draft',
                 ]));
             }
 
@@ -181,12 +262,6 @@ class PayrollService
             $amount = ($guard->daily_rate ?? 0) * ($amount / 100);
         }
 
-        // Safety ceiling: catches data-entry errors (e.g. an extra zero)
-        // before they corrupt payroll. Configurable via the
-        // max_deduction_multiplier PayrollSetting rather than hardcoded,
-        // matching how nssf_employee_rate / standard_shift_hours work.
-        // Guards with no daily_rate set are skipped (nothing to compare
-        // against), same guard-clause pattern used elsewhere in this file.
         if ($guard->daily_rate) {
             $maxMultiplier = (float) (PayrollSetting::where('key', 'max_deduction_multiplier')->value('value') ?? 31);
             $ceiling = $guard->daily_rate * $maxMultiplier;
@@ -223,9 +298,6 @@ class PayrollService
             return ['success' => false, 'message' => 'Payroll record not found'];
         }
 
-        // The finalized -> paid transition is gated behind the approval
-        // engine. Every other transition (e.g. draft -> finalized) is
-        // untouched and behaves exactly as before.
         if ($status === 'paid' && $record->status === 'finalized') {
             return $this->requestPayrollApproval($record, $actingUserId);
         }
@@ -235,13 +307,6 @@ class PayrollService
         return ['success' => true, 'data' => $record];
     }
 
-    /**
-     * Gate for the finalized -> paid transition. Looks at the most recent
-     * approval request for this payroll record:
-     *   - none, or last one terminal (rejected/returned/cancelled) -> submit a fresh request
-     *   - pending -> block, tell the caller to wait
-     *   - approved -> proceed, actually mark the record paid
-     */
     protected function requestPayrollApproval(PayrollRecord $record, ?int $actingUserId): array
     {
         $latest = ApprovalRequest::where('approvable_type', 'payroll_record')
