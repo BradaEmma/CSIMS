@@ -8,6 +8,7 @@ class PayrollDeduction extends Model
 {
     protected $fillable = [
         'guard_id',
+        'employee_id',
         'payroll_deduction_type_id',
         'amount',
         'reason',
