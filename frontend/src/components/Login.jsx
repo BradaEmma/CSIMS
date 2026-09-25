@@ -21,6 +21,7 @@ function Login() {
       localStorage.setItem('csims_token', data.token)
       localStorage.setItem('csims_user', JSON.stringify(data.user))
       localStorage.setItem('csims_roles', JSON.stringify(data.roles))
+      localStorage.setItem('csims_permissions', JSON.stringify(data.permissions))
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)

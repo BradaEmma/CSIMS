@@ -24,6 +24,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import logo from '../assets/logo.png'
+import { can } from '../lib/can'
 
 import NotificationBell from './NotificationBell'
 
@@ -40,11 +41,18 @@ const navGroups = [
     items: [
       { label: 'Clients', path: '/clients', icon: Briefcase, roles: ['admin'] },
       { label: 'Contracts', path: '/contracts', icon: FileText, roles: ['admin'] },
-      { label: 'Sites', path: '/sites', icon: Building2, roles: ['admin', 'supervisor', 'manager'] },
+      { label: 'Sites', path: '/sites', icon: Building2, permission: 'sites.view' },
+      // Roster stays role-gated: roster.view is also held by 'supervisor'
+      // per PermissionSeeder, but supervisor was never in this item's
+      // roles list — converting would add a role that shouldn't see it.
       { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'manager'] },
+      // Guards stays role-gated: guards.view is also held by 'manager'
+      // per PermissionSeeder, which isn't in this item's current roles.
       { label: 'Guards', path: '/guards', icon: Users, roles: ['admin', 'supervisor'] },
-      { label: 'Assignments', path: '/assignments', icon: UserPlus, roles: ['admin', 'supervisor'] },
-      { label: 'Attendance', path: '/attendance', icon: CheckSquare, roles: ['admin', 'supervisor'] },
+      { label: 'Assignments', path: '/assignments', icon: UserPlus, permission: 'assignments.view' },
+      { label: 'Attendance', path: '/attendance', icon: CheckSquare, permission: 'attendance.view' },
+      // Incidents stays role-gated: incidents.view is also held by
+      // 'manager' per PermissionSeeder, not currently in this item's roles.
       { label: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['admin', 'supervisor'] },
       { label: 'Reports', path: '/reports', icon: BarChart3 },
     ],
@@ -52,14 +60,16 @@ const navGroups = [
   {
     label: 'HR',
     items: [
-      { label: 'Employees', path: '/employees', icon: IdCard, roles: ['admin', 'hr', 'manager'] },
-      { label: 'Departments', path: '/departments', icon: Landmark, roles: ['admin', 'hr', 'manager'] },
+      { label: 'Employees', path: '/employees', icon: IdCard, permission: 'employees.view' },
+      { label: 'Departments', path: '/departments', icon: Landmark, permission: 'departments.view' },
     ],
   },
   {
     label: 'Payroll & Finance',
     items: [
-      { label: 'Payroll', path: '/payroll', icon: Wallet, roles: ['admin', 'accountant'] },
+      { label: 'Payroll', path: '/payroll', icon: Wallet, permission: 'payroll.view' },
+      // Payments/Deductions stay role-gated: no matching Spatie permission
+      // exists yet for either (not created in this task, per scope).
       { label: 'Payments', path: '/payments', icon: CreditCard, roles: ['admin', 'accountant'] },
       { label: 'Deductions', path: '/deductions', icon: MinusCircle, roles: ['admin', 'accountant'] },
     ],
@@ -84,12 +94,15 @@ function getInitials(name) {
     .toUpperCase()
 }
 
-// An item with no `roles` array is visible to everyone (unchanged default
-// behavior). An item WITH a `roles` array is only visible if the current
-// user has at least one matching role. This is intentionally generic so
-// future roles (hr, finance, technical, etc.) can be added to any item's
-// `roles` array later without touching this filtering logic.
+// An item with a `permission` field is gated by a real Spatie permission
+// (single source of truth, via can()) — prefer this wherever a matching
+// permission's holder-set exactly matches who should see the item.
+// An item with no `permission` but a `roles` array falls back to the
+// legacy role check — used only where no exactly-matching permission
+// exists yet (see comments above on Roster/Guards/Incidents/etc.).
+// An item with neither is visible to everyone (unchanged default).
 function isItemVisible(item, userRoles) {
+  if (item.permission) return can(item.permission)
   if (!item.roles) return true
   return item.roles.some((role) => userRoles.includes(role))
 }
@@ -105,6 +118,7 @@ function AppLayout({ children, title, subtitle }) {
     localStorage.removeItem('csims_token')
     localStorage.removeItem('csims_user')
     localStorage.removeItem('csims_roles')
+    localStorage.removeItem('csims_permissions')
     navigate('/login')
   }
 

@@ -29,7 +29,8 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $user->createToken('csims-token')->plainTextToken,
-            'roles' => $user->getRoleNames()
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->values()
         ]);
     }
 }
