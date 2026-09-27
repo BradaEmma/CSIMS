@@ -159,10 +159,9 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('attendance')->group(function () {
 
-            Route::post('/check-in',  [AttendanceController::class, 'checkIn']);
-            Route::post('/check-out', [AttendanceController::class, 'checkOut']);
-
             Route::middleware('role:admin|supervisor')->group(function () {
+                Route::post('/check-in',  [AttendanceController::class, 'checkIn']);
+                Route::post('/check-out', [AttendanceController::class, 'checkOut']);
                 Route::get('/today',              [AttendanceController::class, 'today']);
                 Route::get('/guard/{guardId}',    [AttendanceController::class, 'guardHistory']);
                 Route::get('/site/{siteId}',      [AttendanceController::class, 'siteAttendance']);
