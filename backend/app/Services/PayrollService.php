@@ -73,23 +73,20 @@ class PayrollService
             $overtimePay = round($restDayPremium + $extraHoursPay, 2);
             $totalGross = $grossPay + $overtimePay;
 
-            $nssfDeduction = 0;
-            if ($guard->nssf_applicable) {
-                $nssfRate = (float) (PayrollSetting::where('key', 'nssf_employee_rate')->value('value') ?? 0);
-                $nssfDeduction = round($totalGross * ($nssfRate / 100), 2);
-            }
-
-            $payeDeduction = 0;
-            if ($guard->paye_applicable) {
-                $payeIncome = $totalGross - $nssfDeduction;
-                $payeDeduction = $this->calculatePaye($payeIncome);
-            }
-
-            $otherDeductions = PayrollDeduction::where('guard_id', $guardId)
+            $otherDeductions = (float) PayrollDeduction::where('guard_id', $guardId)
                 ->where('period', $period)
                 ->sum('amount');
 
-            $netPay = $totalGross - $nssfDeduction - $payeDeduction - $otherDeductions;
+            $statutory = $this->calculateStatutory(
+                (float) $totalGross,
+                (bool) $guard->nssf_applicable,
+                (bool) $guard->paye_applicable,
+                $otherDeductions
+            );
+
+            $nssfDeduction = $statutory['nssf_deduction'];
+            $payeDeduction = $statutory['paye_deduction'];
+            $netPay = $statutory['net_pay'];
 
             $data = [
                 'days_worked'             => $daysWorked,
@@ -151,21 +148,6 @@ class PayrollService
             $overtimePay = 0.0;
             $totalGross = $grossPay + $overtimePay;
 
-            $nssfApplicable = (bool) ($employee->nssf_applicable ?? true);
-            $payeApplicable = (bool) ($employee->paye_applicable ?? true);
-
-            $nssfDeduction = 0.0;
-            if ($nssfApplicable) {
-                $nssfRate = (float) (PayrollSetting::where('key', 'nssf_employee_rate')->value('value') ?? 10);
-                $nssfDeduction = round($totalGross * ($nssfRate / 100), 2);
-            }
-
-            $payeDeduction = 0.0;
-            if ($payeApplicable) {
-                $payeIncome = $totalGross - $nssfDeduction;
-                $payeDeduction = $this->calculatePaye($payeIncome);
-            }
-
             $otherDeductions = 0.0;
             if (Schema::hasColumn('payroll_deductions', 'employee_id')) {
                 $otherDeductions = (float) PayrollDeduction::where('employee_id', $employeeId)
@@ -173,7 +155,16 @@ class PayrollService
                     ->sum('amount');
             }
 
-            $netPay = $totalGross - $nssfDeduction - $payeDeduction - $otherDeductions;
+            $statutory = $this->calculateStatutory(
+                $totalGross,
+                (bool) ($employee->nssf_applicable ?? true),
+                (bool) ($employee->paye_applicable ?? true),
+                $otherDeductions
+            );
+
+            $nssfDeduction = $statutory['nssf_deduction'];
+            $payeDeduction = $statutory['paye_deduction'];
+            $netPay = $statutory['net_pay'];
 
             $data = [
                 'days_worked'            => 0,
@@ -221,6 +212,33 @@ class PayrollService
             'succeeded' => collect($results)->where('success', true)->count(),
             'failed' => collect($results)->where('success', false)->count(),
             'details' => $results,
+        ];
+    }
+
+    /**
+     * Shared Tanzania statutory calculation for one payroll line
+     * (guard or salaried). NSSF employee share on total gross, PAYE on
+     * (total gross - employee NSSF), net = total gross - NSSF - PAYE - other
+     * deductions. The NSSF rate comes from payroll_settings as a whole
+     * percentage; if the setting is missing it falls back to the statutory 10.
+     */
+    private function calculateStatutory(float $totalGross, bool $nssfApplicable, bool $payeApplicable, float $otherDeductions): array
+    {
+        $nssfDeduction = 0.0;
+        if ($nssfApplicable) {
+            $nssfRate = (float) (PayrollSetting::where('key', 'nssf_employee_rate')->value('value') ?? 10);
+            $nssfDeduction = round($totalGross * ($nssfRate / 100), 2);
+        }
+
+        $payeDeduction = 0.0;
+        if ($payeApplicable) {
+            $payeDeduction = $this->calculatePaye($totalGross - $nssfDeduction);
+        }
+
+        return [
+            'nssf_deduction' => $nssfDeduction,
+            'paye_deduction' => $payeDeduction,
+            'net_pay'        => $totalGross - $nssfDeduction - $payeDeduction - $otherDeductions,
         ];
     }
 
