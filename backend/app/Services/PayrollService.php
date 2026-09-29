@@ -304,6 +304,56 @@ class PayrollService
         return ['success' => true, 'data' => $deduction];
     }
 
+    /**
+     * Salaried-employee equivalent of addDeduction(). Percentage-type
+     * deductions are calculated off monthly_salary, and the safety
+     * ceiling caps at one month's salary rather than the guard path's
+     * daily_rate x max_deduction_multiplier setting, since there is no
+     * daily concept for a salaried employee.
+     */
+    public function addDeductionForEmployee(int $employeeId, int $deductionTypeId, ?float $amountOverride, string $reason, int $appliedBy, string $period): array
+    {
+        $type = PayrollDeductionType::where('id', $deductionTypeId)->where('is_active', true)->first();
+
+        if (!$type) {
+            return ['success' => false, 'message' => 'Invalid or inactive deduction type'];
+        }
+
+        $employee = Employee::find($employeeId);
+
+        if (!$employee) {
+            return ['success' => false, 'message' => 'Employee not found'];
+        }
+
+        $amount = $amountOverride ?? $type->default_value;
+
+        if ($type->calculation_type === 'percentage') {
+            $amount = ($employee->monthly_salary ?? 0) * ($amount / 100);
+        }
+
+        if ($employee->monthly_salary) {
+            $ceiling = $employee->monthly_salary;
+
+            if ($amount > $ceiling) {
+                return [
+                    'success' => false,
+                    'message' => "Deduction amount ({$amount}) exceeds the safety ceiling ({$ceiling}) for this employee's monthly salary — please double check the figure.",
+                ];
+            }
+        }
+
+        $deduction = PayrollDeduction::create([
+            'employee_id' => $employeeId,
+            'payroll_deduction_type_id' => $deductionTypeId,
+            'amount' => $amount,
+            'reason' => $reason,
+            'applied_by' => $appliedBy,
+            'period' => $period,
+        ]);
+
+        return ['success' => true, 'data' => $deduction];
+    }
+
     public function updateStatus(int $recordId, string $status, ?int $actingUserId = null): array
     {
         if (!in_array($status, ['draft', 'finalized', 'paid'], true)) {

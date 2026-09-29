@@ -134,21 +134,31 @@ class PayrollController extends Controller
     public function addDeduction(Request $request): JsonResponse
     {
         $request->validate([
-            'guard_id' => 'required|integer|exists:guards,id',
+            'guard_id' => 'required_without:employee_id|nullable|integer|exists:guards,id',
+            'employee_id' => 'required_without:guard_id|nullable|integer|exists:employees,id',
             'payroll_deduction_type_id' => 'required|integer|exists:payroll_deduction_types,id',
             'amount' => 'nullable|numeric|min:0',
             'reason' => 'required|string',
             'period' => 'required|date_format:Y-m',
         ]);
 
-        $result = $this->payrollService->addDeduction(
-            $request->guard_id,
-            $request->payroll_deduction_type_id,
-            $request->amount,
-            $request->reason,
-            $request->user()->id,
-            $request->period
-        );
+        $result = $request->guard_id
+            ? $this->payrollService->addDeduction(
+                $request->guard_id,
+                $request->payroll_deduction_type_id,
+                $request->amount,
+                $request->reason,
+                $request->user()->id,
+                $request->period
+            )
+            : $this->payrollService->addDeductionForEmployee(
+                $request->employee_id,
+                $request->payroll_deduction_type_id,
+                $request->amount,
+                $request->reason,
+                $request->user()->id,
+                $request->period
+            );
 
         return response()->json(
             ['message' => $result['message'] ?? null, 'data' => $result['data'] ?? null],

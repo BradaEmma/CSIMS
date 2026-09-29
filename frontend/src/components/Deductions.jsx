@@ -11,6 +11,8 @@ function currentPeriod() {
 function Deductions() {
   const [types, setTypes] = useState([])
   const [guards, setGuards] = useState([])
+  const [salariedEmployees, setSalariedEmployees] = useState([])
+  const [personType, setPersonType] = useState('guard') // 'guard' | 'employee'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -39,10 +41,12 @@ function Deductions() {
 
   function loadData() {
     setLoading(true)
-    Promise.all([apiGet('/payroll/deduction-types'), apiGet('/guards')])
-      .then(([typesRes, guardsRes]) => {
+    Promise.all([apiGet('/payroll/deduction-types'), apiGet('/guards'), apiGet('/employees')])
+      .then(([typesRes, guardsRes, employeesRes]) => {
         setTypes(typesRes.data || [])
         setGuards(Array.isArray(guardsRes) ? guardsRes : [])
+        const employees = Array.isArray(employeesRes) ? employeesRes : []
+        setSalariedEmployees(employees.filter((e) => e.pay_type === 'monthly'))
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -81,7 +85,9 @@ function Deductions() {
     setDeductionSaving(true)
     try {
       await apiPost('/payroll/deductions', {
-        guard_id: Number(deductionForm.guard_id),
+        ...(personType === 'guard'
+          ? { guard_id: Number(deductionForm.guard_id) }
+          : { employee_id: Number(deductionForm.guard_id) }),
         payroll_deduction_type_id: Number(deductionForm.payroll_deduction_type_id),
         amount: deductionForm.amount ? Number(deductionForm.amount) : null,
         reason: deductionForm.reason,
@@ -182,7 +188,7 @@ function Deductions() {
 
           {/* Apply Deduction panel */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h2 className="text-sm font-bold text-slate-800 mb-4">Apply Deduction to Guard</h2>
+            <h2 className="text-sm font-bold text-slate-800 mb-4">Apply Deduction</h2>
 
             {deductionMessage && (
               <p className="text-sm text-success bg-success-bg px-3 py-2 rounded-lg mb-3">{deductionMessage}</p>
@@ -193,16 +199,36 @@ function Deductions() {
 
             <form onSubmit={handleApplyDeduction} className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-slate-500 block mb-1">Guard</label>
+                <label className="text-xs font-medium text-slate-500 block mb-1">Person Type</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setPersonType('guard'); setDeductionForm((p) => ({ ...p, guard_id: '' })) }}
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm border ${personType === 'guard' ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-slate-300 text-slate-500'}`}
+                  >
+                    Guard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPersonType('employee'); setDeductionForm((p) => ({ ...p, guard_id: '' })) }}
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm border ${personType === 'employee' ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-slate-300 text-slate-500'}`}
+                  >
+                    Salaried Employee
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-slate-500 block mb-1">{personType === 'guard' ? 'Guard' : 'Employee'}</label>
                 <select
                   value={deductionForm.guard_id}
                   onChange={(e) => setDeductionForm((p) => ({ ...p, guard_id: e.target.value }))}
                   required
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
                 >
-                  <option value="">Select guard</option>
-                  {guards.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
+                  <option value="">{personType === 'guard' ? 'Select guard' : 'Select employee'}</option>
+                  {(personType === 'guard' ? guards : salariedEmployees).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
