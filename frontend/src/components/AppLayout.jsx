@@ -39,21 +39,17 @@ const navGroups = [
   {
     label: 'Operations',
     items: [
-      { label: 'Clients', path: '/clients', icon: Briefcase, roles: ['admin'] },
-      { label: 'Contracts', path: '/contracts', icon: FileText, roles: ['admin'] },
+      { label: 'Clients', path: '/clients', icon: Briefcase, permission: 'clients.view' },
+      { label: 'Contracts', path: '/contracts', icon: FileText, permission: 'contracts.view' },
       { label: 'Sites', path: '/sites', icon: Building2, permission: 'sites.view' },
       // Roster stays role-gated: roster.view is also held by 'supervisor'
       // per PermissionSeeder, but supervisor was never in this item's
       // roles list — converting would add a role that shouldn't see it.
       { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'manager'] },
-      // Guards stays role-gated: guards.view is also held by 'manager'
-      // per PermissionSeeder, which isn't in this item's current roles.
-      { label: 'Guards', path: '/guards', icon: Users, roles: ['admin', 'supervisor'] },
+      { label: 'Guards', path: '/guards', icon: Users, permission: 'guards.view' },
       { label: 'Assignments', path: '/assignments', icon: UserPlus, permission: 'assignments.view' },
       { label: 'Attendance', path: '/attendance', icon: CheckSquare, permission: 'attendance.view' },
-      // Incidents stays role-gated: incidents.view is also held by
-      // 'manager' per PermissionSeeder, not currently in this item's roles.
-      { label: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['admin', 'supervisor'] },
+      { label: 'Incidents', path: '/incidents', icon: AlertTriangle, permission: 'incidents.view' },
       { label: 'Reports', path: '/reports', icon: BarChart3 },
     ],
   },
