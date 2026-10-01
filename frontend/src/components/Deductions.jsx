@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
-import { apiGet, apiPost } from '../lib/api'
-import { Plus } from 'lucide-react'
+import { apiGet, apiPost, apiDelete } from '../lib/api'
+import { Plus, Trash2 } from 'lucide-react'
+import ConfirmModal from './ConfirmModal'
 
 function currentPeriod() {
   const now = new Date()
@@ -26,6 +27,7 @@ function Deductions() {
   const [typeSaving, setTypeSaving] = useState(false)
   const [typeMessage, setTypeMessage] = useState('')
   const [typeError, setTypeError] = useState('')
+  const [confirmingType, setConfirmingType] = useState(null)
 
   // Apply deduction form
   const [deductionForm, setDeductionForm] = useState({
@@ -102,6 +104,20 @@ function Deductions() {
     }
   }
 
+  async function confirmDeleteType() {
+    const type = confirmingType
+    setConfirmingType(null)
+    setTypeMessage('')
+    setTypeError('')
+    try {
+      const res = await apiDelete(`/payroll/deduction-types/${type.id}`)
+      setTypeMessage(res.message || 'Deduction type removed.')
+      loadData()
+    } catch (err) {
+      setTypeError(err.message)
+    }
+  }
+
   const selectedType = types.find((t) => t.id === Number(deductionForm.payroll_deduction_type_id))
 
   return (
@@ -134,6 +150,14 @@ function Deductions() {
                       {t.calculation_type === 'percentage' ? `${t.default_value}% of daily rate` : `TZS ${Number(t.default_value).toLocaleString()}`}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingType(t)}
+                    className="p-1.5 text-slate-400 hover:text-danger hover:bg-danger-bg rounded-lg transition"
+                    aria-label={`Delete ${t.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               ))}
               {types.length === 0 && <p className="text-slate-400 text-sm">No deduction types yet.</p>}
@@ -296,6 +320,15 @@ function Deductions() {
             </form>
           </div>
         </div>
+      )}
+      {confirmingType && (
+        <ConfirmModal
+          title="Delete Deduction Type"
+          message={`Remove "${confirmingType.name}"? If it has been applied before it will be archived (hidden, history kept); otherwise it is deleted permanently.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDeleteType}
+          onCancel={() => setConfirmingType(null)}
+        />
       )}
     </AppLayout>
   )

@@ -194,6 +194,33 @@ class PayrollController extends Controller
     }
 
     /**
+     * DELETE /api/payroll/deduction-types/{id}
+     * Deletes an unused type; archives (is_active = false) a type that has been used.
+     */
+    public function destroyDeductionType(int $id): JsonResponse
+    {
+        $type = PayrollDeductionType::find($id);
+
+        if (!$type) {
+            return response()->json(['message' => 'Deduction type not found'], 404);
+        }
+
+        $usedBy = $type->deductions()->count();
+
+        if ($usedBy > 0) {
+            $type->update(['is_active' => false]);
+
+            return response()->json([
+                'message' => "Deduction type archived (it was used by {$usedBy} deduction(s), so it was kept for history).",
+            ]);
+        }
+
+        $type->delete();
+
+        return response()->json(['message' => 'Deduction type deleted']);
+    }
+
+    /**
      * GET /api/payroll/settings
      */
     public function settings(): JsonResponse

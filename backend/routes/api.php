@@ -279,6 +279,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('/generate-bulk',   [PayrollController::class, 'generateBulk']);
                 Route::post('/deductions',      [PayrollController::class, 'addDeduction']);
                 Route::post('/deduction-types', [PayrollController::class, 'storeDeductionType']);
+                Route::delete('/deduction-types/{id}', [PayrollController::class, 'destroyDeductionType']);
                 Route::patch('/{id}/status',    [PayrollController::class, 'updateStatus']);
             });
 
