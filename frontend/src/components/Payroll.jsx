@@ -38,19 +38,29 @@ function Payroll() {
   const [unpaidValue, setUnpaidValue] = useState('')
   const [savingUnpaid, setSavingUnpaid] = useState(false)
   const [employerCost, setEmployerCost] = useState(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(50)
+  const [lastPage, setLastPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [summary, setSummary] = useState(null)
 
   function loadRecords() {
     setLoading(true)
     loadEmployerCost()
-    apiGet(`/payroll?period=${period}`)
-      .then((res) => setRecords(res.data?.data || []))
+    apiGet(`/payroll?page=${page}&per_page=${perPage}&period=${period}`)
+      .then((res) => {
+        setRecords(res.data?.data || [])
+        setLastPage(res.data?.last_page || 1)
+        setTotalCount(res.data?.total || 0)
+        setSummary(res.summary || null)
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
     loadRecords()
-  }, [period])
+  }, [period, page, perPage])
 
   function loadEmployerCost() {
     apiGet(`/payroll/employer-cost?period=${period}`)
@@ -65,7 +75,7 @@ function Payroll() {
     try {
       const res = await apiPost('/payroll/generate-bulk', { period })
       setMessage(
-      `Generated for ${res.data.total_guards} guard(s): ${res.data.succeeded} succeeded, ${res.data.failed} failed. Salaried staff: ${res.data.employees_succeeded ?? 0} of ${res.data.total_employees ?? 0} succeeded.`
+        `Generated for ${res.data.total_guards} guard(s): ${res.data.succeeded} succeeded, ${res.data.failed} failed. Salaried staff: ${res.data.employees_succeeded ?? 0} of ${res.data.total_employees ?? 0} succeeded.`
       )
       loadRecords()
     } catch (err) {
@@ -156,7 +166,7 @@ function Payroll() {
               <input
                 type="month"
                 value={period}
-                onChange={(e) => setPeriod(e.target.value)}
+                onChange={(e) => { setPeriod(e.target.value); setPage(1) }}
                 className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
               />
             </div>
@@ -184,8 +194,8 @@ function Payroll() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500 uppercase font-medium">Guards This Period</p>
-            <p className="text-2xl font-bold text-slate-900 mt-1">{records.length}</p>
+            <p className="text-xs text-slate-500 uppercase font-medium">Employees This Period</p>
+            <p className="text-2xl font-bold text-slate-900 mt-1">{summary?.count ?? records.length}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
             <Wallet size={18} />
@@ -193,11 +203,11 @@ function Payroll() {
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <p className="text-xs text-slate-500 uppercase font-medium">Total Gross Pay</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{formatCurrency(totals.gross)}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{formatCurrency(summary?.total_gross ?? totals.gross)}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <p className="text-xs text-slate-500 uppercase font-medium">Total Net Pay</p>
-          <p className="text-2xl font-bold text-success mt-1">{formatCurrency(totals.net)}</p>
+          <p className="text-2xl font-bold text-success mt-1">{formatCurrency(summary?.total_net ?? totals.net)}</p>
         </div>
       </div>
 
@@ -240,7 +250,7 @@ function Payroll() {
       {/* Records table */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <h2 className="text-sm font-bold text-slate-800 mb-4">
-          Payroll Records — {period} ({records.length})
+          Payroll Records — {period} ({totalCount || records.length})
         </h2>
 
         {loading ? (
@@ -325,7 +335,7 @@ function Payroll() {
                         Finalize
                       </button>
                     )}
-                                        {r.status === 'finalized' && r.approval_status === 'pending' && (
+                    {r.status === 'finalized' && r.approval_status === 'pending' && (
                       <span className="text-xs font-medium text-slate-400 italic">
                         Awaiting Approval
                       </span>
@@ -344,6 +354,41 @@ function Payroll() {
               ))}
             </tbody>
           </table>
+        )}
+
+        {!loading && totalCount > 0 && (
+          <div className="flex items-center justify-between flex-wrap gap-3 mt-4 pt-4 border-t border-slate-100">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <span>Show</span>
+              <select
+                value={perPage}
+                onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }}
+                className="border border-slate-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-primary"
+              >
+                {[10, 25, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+              <span>per page</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <span>Page {page} of {lastPage}</span>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                disabled={page >= lastPage}
+                className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
 
         {!loading && records.length === 0 && (

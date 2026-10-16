@@ -77,7 +77,8 @@ class PayrollController extends Controller
             $query->where('status', $request->status);
         }
 
-        $paginated = $query->paginate(30);
+        $perPage = max(1, min((int) $request->query('per_page', 30), 200));
+        $paginated = $query->paginate($perPage);
 
         // Attach approval_status to finalized records so the frontend can
         // show "Awaiting Approval" instead of a clickable Mark Paid button
@@ -99,7 +100,20 @@ class PayrollController extends Controller
             });
         }
 
-        return response()->json(['data' => $paginated]);
+        // Totals over the whole filtered set, independent of the current page.
+        $totalsQuery = (clone $query)->reorder();
+
+        return response()->json([
+            'data' => $paginated,
+            'summary' => [
+                'count' => (clone $totalsQuery)->count(),
+                'total_gross' => round(
+                    (float) (clone $totalsQuery)->sum('gross_pay') + (float) (clone $totalsQuery)->sum('overtime_pay'),
+                    2
+                ),
+                'total_net' => round((float) (clone $totalsQuery)->sum('net_pay'), 2),
+            ],
+        ]);
     }
 
     /**
