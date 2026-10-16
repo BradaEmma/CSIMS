@@ -218,6 +218,17 @@ class PayrollService
             ->unique()
             ->values();
 
+        // Salaried (monthly) staff who are not guards, so nobody is paid twice.
+        $employeeIds = Employee::where('status', 'active')
+            ->where('pay_type', 'monthly')
+            ->whereNotIn('id', Guard::whereNotNull('employee_id')->pluck('employee_id'))
+            ->pluck('id');
+
+        $employeeResults = [];
+        foreach ($employeeIds as $employeeId) {
+            $employeeResults[$employeeId] = $this->generatePayrollForSalariedEmployee($employeeId, $period);
+        }
+
         $results = [];
 
         foreach ($guardIds as $guardId) {
@@ -230,6 +241,10 @@ class PayrollService
             'succeeded' => collect($results)->where('success', true)->count(),
             'failed' => collect($results)->where('success', false)->count(),
             'details' => $results,
+            'total_employees' => $employeeIds->count(),
+            'employees_succeeded' => collect($employeeResults)->where('success', true)->count(),
+            'employees_failed' => collect($employeeResults)->where('success', false)->count(),
+            'employee_details' => $employeeResults,
         ];
     }
 

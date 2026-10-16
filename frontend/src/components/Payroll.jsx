@@ -65,7 +65,7 @@ function Payroll() {
     try {
       const res = await apiPost('/payroll/generate-bulk', { period })
       setMessage(
-        `Generated for ${res.data.total_guards} guard(s): ${res.data.succeeded} succeeded, ${res.data.failed} failed.`
+      `Generated for ${res.data.total_guards} guard(s): ${res.data.succeeded} succeeded, ${res.data.failed} failed. Salaried staff: ${res.data.employees_succeeded ?? 0} of ${res.data.total_employees ?? 0} succeeded.`
       )
       loadRecords()
     } catch (err) {
