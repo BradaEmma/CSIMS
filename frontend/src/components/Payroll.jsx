@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import { apiGet, apiPost, apiPatch } from '../lib/api'
 import { Wallet, RefreshCw } from 'lucide-react'
+import { can } from '../lib/can'
 
 function StatusBadge({ status }) {
   const styles = {
@@ -33,6 +34,9 @@ function Payroll() {
   const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [unpaidValue, setUnpaidValue] = useState('')
+  const [savingUnpaid, setSavingUnpaid] = useState(false)
 
   function loadRecords() {
     setLoading(true)
@@ -77,6 +81,52 @@ function Payroll() {
       setError(err.message)
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  function daysInSelectedMonth() {
+    const [y, m] = period.split('-').map(Number)
+    return new Date(y, m, 0).getDate()
+  }
+
+  function startEditUnpaid(record) {
+    setEditingId(record.id)
+    setUnpaidValue(String(record.unpaid_days ?? 0))
+    setError('')
+    setMessage('')
+  }
+
+  function cancelEditUnpaid() {
+    setEditingId(null)
+    setUnpaidValue('')
+  }
+
+  async function saveUnpaid(record) {
+    const maxDays = daysInSelectedMonth()
+    const value = Number(unpaidValue)
+
+    if (unpaidValue === '' || !Number.isInteger(value) || value < 0 || value > maxDays) {
+      setError(`Unpaid days must be a whole number from 0 to ${maxDays} for ${period}.`)
+      return
+    }
+
+    setSavingUnpaid(true)
+    setError('')
+    setMessage('')
+    try {
+      await apiPost('/payroll/generate', {
+        guard_id: record.guard_id,
+        period,
+        unpaid_days: value,
+      })
+      setMessage(`Unpaid days for ${record.security_guard?.name || 'guard'} set to ${value}; payroll recalculated.`)
+      setEditingId(null)
+      setUnpaidValue('')
+      loadRecords()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSavingUnpaid(false)
     }
   }
 
@@ -157,6 +207,7 @@ function Payroll() {
               <tr className="text-left text-xs text-slate-400 uppercase border-b border-slate-200">
                 <th className="pb-2">Guard</th>
                 <th className="pb-2">Days</th>
+                <th className="pb-2">Unpaid</th>
                 <th className="pb-2">Gross</th>
                 <th className="pb-2">Overtime</th>
                 <th className="pb-2">NSSF</th>
@@ -172,6 +223,47 @@ function Payroll() {
                 <tr key={r.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{r.security_guard?.name || '—'}</td>
                   <td className="py-2.5 text-slate-600">{r.days_worked}</td>
+                  <td className="py-2.5 text-slate-600">
+                    {editingId === r.id && r.status === 'draft' && r.guard_id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min="0"
+                          max={daysInSelectedMonth()}
+                          step="1"
+                          value={unpaidValue}
+                          onChange={(e) => setUnpaidValue(e.target.value)}
+                          className="w-16 border border-slate-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={() => saveUnpaid(r)}
+                          disabled={savingUnpaid}
+                          className="text-success hover:underline text-xs font-medium disabled:opacity-50"
+                        >
+                          {savingUnpaid ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={cancelEditUnpaid}
+                          disabled={savingUnpaid}
+                          className="text-slate-500 hover:underline text-xs font-medium disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>{r.unpaid_days ?? 0}</span>
+                        {r.status === 'draft' && r.guard_id && can('payroll.manage') && (
+                          <button
+                            onClick={() => startEditUnpaid(r)}
+                            className="text-primary hover:underline text-xs font-medium"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="py-2.5 text-slate-600">{formatCurrency(r.gross_pay)}</td>
                   <td className="py-2.5 text-slate-600">{formatCurrency(r.overtime_pay)}</td>
                   <td className="py-2.5 text-slate-600">{formatCurrency(r.nssf_deduction)}</td>
