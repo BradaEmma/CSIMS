@@ -271,6 +271,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('permission:payroll.view')->group(function () {
                 Route::get('/',                [PayrollController::class, 'index']);
                 Route::get('/deduction-types',  [PayrollController::class, 'deductionTypes']);
+                Route::get('/employer-cost',    [PayrollController::class, 'employerCost']);
                 Route::get('/{id}',             [PayrollController::class, 'show']);
             });
 

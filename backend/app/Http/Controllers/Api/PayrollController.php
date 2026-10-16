@@ -63,7 +63,7 @@ class PayrollController extends Controller
             'status' => 'nullable|in:draft,finalized,paid',
         ]);
 
-        $query = PayrollRecord::with('securityGuard')->orderByDesc('period');
+        $query = PayrollRecord::with(['securityGuard', 'employee'])->orderByDesc('period');
 
         if ($request->guard_id) {
             $query->where('guard_id', $request->guard_id);
@@ -114,6 +114,63 @@ class PayrollController extends Controller
         }
 
         return response()->json(['data' => $record]);
+    }
+
+        /**
+     * GET /api/payroll/employer-cost?period=Y-m
+     * Read-only employer-side cost summary, computed live from payroll records
+     * (all statuses, drafts included).
+     */
+    public function employerCost(Request $request): JsonResponse
+    {
+        $request->validate([
+            'period' => 'required|date_format:Y-m',
+        ]);
+
+        $records = PayrollRecord::where('period', $request->period)->get();
+
+        $setting = fn (string $key, float $default) =>
+            (float) (PayrollSetting::where('key', $key)->value('value') ?? $default);
+
+        $nssfEmployerRate = $setting('nssf_employer_rate', 10);
+        $sdlRate = $setting('sdl_rate', 3.5);
+        $sdlMinEmployees = (int) $setting('sdl_min_employees', 10);
+        $wcfRate = $setting('wcf_rate', 0.5);
+
+        // Gross base = basic pay + overtime. Change here if SDL/WCF use another base.
+        $totalGross = $records->sum(fn ($r) => (float) $r->gross_pay + (float) $r->overtime_pay);
+
+        // Employer NSSF only for people who actually have NSSF deducted.
+        $nssfGross = $records
+            ->filter(fn ($r) => (float) $r->nssf_deduction > 0)
+            ->sum(fn ($r) => (float) $r->gross_pay + (float) $r->overtime_pay);
+
+        $headcount = \App\Models\Employee::where('status', 'active')->count();
+        $sdlApplies = $headcount >= $sdlMinEmployees;
+
+        $employerNssf = round($nssfGross * ($nssfEmployerRate / 100), 2);
+        $sdl = $sdlApplies ? round($totalGross * ($sdlRate / 100), 2) : 0.0;
+        $wcf = round($totalGross * ($wcfRate / 100), 2);
+        $employerCost = round($employerNssf + $sdl + $wcf, 2);
+
+        return response()->json(['data' => [
+            'period' => $request->period,
+            'records' => $records->count(),
+            'headcount' => $headcount,
+            'total_gross' => round($totalGross, 2),
+            'employer_nssf' => $employerNssf,
+            'sdl' => $sdl,
+            'sdl_applies' => $sdlApplies,
+            'wcf' => $wcf,
+            'employer_cost' => $employerCost,
+            'total_cost_to_company' => round($totalGross + $employerCost, 2),
+            'rates' => [
+                'nssf_employer' => $nssfEmployerRate,
+                'sdl' => $sdlRate,
+                'sdl_min_employees' => $sdlMinEmployees,
+                'wcf' => $wcfRate,
+            ],
+        ]]);
     }
 
     /**

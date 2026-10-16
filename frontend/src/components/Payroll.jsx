@@ -37,9 +37,11 @@ function Payroll() {
   const [editingId, setEditingId] = useState(null)
   const [unpaidValue, setUnpaidValue] = useState('')
   const [savingUnpaid, setSavingUnpaid] = useState(false)
+  const [employerCost, setEmployerCost] = useState(null)
 
   function loadRecords() {
     setLoading(true)
+    loadEmployerCost()
     apiGet(`/payroll?period=${period}`)
       .then((res) => setRecords(res.data?.data || []))
       .catch((err) => setError(err.message))
@@ -49,6 +51,12 @@ function Payroll() {
   useEffect(() => {
     loadRecords()
   }, [period])
+
+  function loadEmployerCost() {
+    apiGet(`/payroll/employer-cost?period=${period}`)
+      .then((res) => setEmployerCost(res.data || null))
+      .catch(() => setEmployerCost(null))
+  }
 
   async function handleGenerateBulk() {
     setGenerating(true)
@@ -193,6 +201,42 @@ function Payroll() {
         </div>
       </div>
 
+      {employerCost && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
+          <h2 className="text-sm font-bold text-slate-800 mb-1">Employer Cost — {period}</h2>
+          <p className="text-xs text-slate-400 mb-4">
+            Company-side statutory cost on top of gross pay. Includes draft records.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-medium">Employer NSSF ({employerCost.rates.nssf_employer}%)</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">{formatCurrency(employerCost.employer_nssf)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-medium">SDL ({employerCost.rates.sdl}%)</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">
+                {employerCost.sdl_applies ? formatCurrency(employerCost.sdl) : 'Not applicable'}
+              </p>
+              {!employerCost.sdl_applies && (
+                <p className="text-xs text-slate-400">Below {employerCost.rates.sdl_min_employees} employees</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-medium">WCF ({employerCost.rates.wcf}%)</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">{formatCurrency(employerCost.wcf)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-medium">Total Employer Cost</p>
+              <p className="text-lg font-bold text-warning mt-1">{formatCurrency(employerCost.employer_cost)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-medium">Total Cost to Company</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">{formatCurrency(employerCost.total_cost_to_company)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Records table */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
         <h2 className="text-sm font-bold text-slate-800 mb-4">
@@ -221,7 +265,7 @@ function Payroll() {
             <tbody>
               {records.map((r) => (
                 <tr key={r.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2.5 font-medium text-slate-700">{r.security_guard?.name || '—'}</td>
+                  <td className="py-2.5 font-medium text-slate-700">{r.security_guard?.name || r.employee?.name || '—'}</td>
                   <td className="py-2.5 text-slate-600">{r.days_worked}</td>
                   <td className="py-2.5 text-slate-600">
                     {editingId === r.id && r.status === 'draft' && r.guard_id ? (
