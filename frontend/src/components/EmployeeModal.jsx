@@ -14,6 +14,10 @@ function EmployeeModal({ employee, onClose, onSaved }) {
     position: employee?.position || '',
     hire_date: employee?.hire_date || '',
     status: employee?.status || 'active',
+    pay_type: employee?.pay_type || 'daily',
+    monthly_salary: employee?.monthly_salary || '',
+    nssf_applicable: employee?.nssf_applicable ?? true,
+    paye_applicable: employee?.paye_applicable ?? true,
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -42,6 +46,10 @@ function EmployeeModal({ employee, onClose, onSaved }) {
       department_id: form.department_id || null,
       position: form.position || null,
       hire_date: form.hire_date || null,
+      pay_type: form.pay_type,
+      monthly_salary: form.pay_type === 'monthly' && form.monthly_salary ? Number(form.monthly_salary) : null,
+      nssf_applicable: !!form.nssf_applicable,
+      paye_applicable: !!form.paye_applicable,
     }
 
     if (isEdit) {
@@ -155,6 +163,50 @@ function EmployeeModal({ employee, onClose, onSaved }) {
                 onChange={handleChange}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
               />
+            </div>
+
+            <div className="border-t border-slate-100 pt-4">
+              <p className="text-xs font-bold text-slate-700 uppercase mb-3">Pay</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-slate-500 block mb-1">Pay Type</label>
+                  <select
+                    name="pay_type"
+                    value={form.pay_type}
+                    onChange={handleChange}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                  >
+                    <option value="daily">Daily (guards)</option>
+                    <option value="monthly">Monthly salary</option>
+                  </select>
+                </div>
+
+                {form.pay_type === 'monthly' && (
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 block mb-1">Monthly Salary (TZS)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      name="monthly_salary"
+                      value={form.monthly_salary}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. 500000"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                )}
+
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <input type="checkbox" name="nssf_applicable" checked={!!form.nssf_applicable} onChange={handleChange} />
+                  NSSF applies
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <input type="checkbox" name="paye_applicable" checked={!!form.paye_applicable} onChange={handleChange} />
+                  PAYE applies
+                </label>
+              </div>
             </div>
 
             {isEdit && (

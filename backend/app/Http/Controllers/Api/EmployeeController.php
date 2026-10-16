@@ -40,6 +40,10 @@ class EmployeeController extends Controller
             'position' => 'nullable|string',
             'status' => 'nullable|in:active,inactive',
             'hire_date' => 'nullable|date',
+            'pay_type' => 'sometimes|in:daily,monthly',
+            'monthly_salary' => 'nullable|numeric|gt:0|required_if:pay_type,monthly',
+            'nssf_applicable' => 'sometimes|boolean',
+            'paye_applicable' => 'sometimes|boolean',
         ]);
 
         $employee = Employee::create([
@@ -129,6 +133,10 @@ class EmployeeController extends Controller
             'position' => 'sometimes|nullable|string',
             'status' => 'sometimes|in:active,inactive',
             'hire_date' => 'sometimes|nullable|date',
+            'pay_type' => 'sometimes|in:daily,monthly',
+            'monthly_salary' => 'sometimes|nullable|numeric|gt:0|required_if:pay_type,monthly',
+            'nssf_applicable' => 'sometimes|boolean',
+            'paye_applicable' => 'sometimes|boolean',
         ]);
 
         $employee->update($validated);
