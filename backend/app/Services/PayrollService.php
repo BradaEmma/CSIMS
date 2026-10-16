@@ -204,10 +204,19 @@ class PayrollService
 
     public function generateBulkForPeriod(string $period): array
     {
-        $guardIds = RosterAssignment::whereYear('date', explode('-', $period)[0])
-            ->whereMonth('date', explode('-', $period)[1])
-            ->pluck('guard_id')
-            ->unique();
+        [$year, $month] = explode('-', $period);
+
+        // Every active guard (rostered or not), plus anyone with roster rows
+        // in this month even if now inactive (e.g. left mid-month). Deduplicated.
+        $rosteredGuardIds = RosterAssignment::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->pluck('guard_id');
+
+        $guardIds = Guard::where('status', 'active')
+            ->pluck('id')
+            ->merge($rosteredGuardIds)
+            ->unique()
+            ->values();
 
         $results = [];
 
