@@ -11,6 +11,7 @@ class PayrollRecord extends Model
         'employee_id',
         'period',
         'days_worked',
+        'unpaid_days',
         'overtime_days',
         'gross_pay',
         'overtime_pay',

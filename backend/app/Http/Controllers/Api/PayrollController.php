@@ -23,9 +23,14 @@ class PayrollController extends Controller
         $request->validate([
             'guard_id' => 'required|integer|exists:guards,id',
             'period' => 'required|date_format:Y-m',
+            'unpaid_days' => 'nullable|integer|min:0|max:31',
         ]);
 
-        $result = $this->payrollService->generatePayrollForGuard($request->guard_id, $request->period);
+        $result = $this->payrollService->generatePayrollForGuard(
+            $request->guard_id,
+            $request->period,
+            $request->filled('unpaid_days') ? (int) $request->unpaid_days : null
+        );
 
         return response()->json(
             ['message' => $result['message'] ?? null, 'data' => $result['data'] ?? null],

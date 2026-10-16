@@ -19,6 +19,7 @@ class Guard extends Model
         'site_id',
         'created_by',
         'daily_rate',
+        'monthly_basic',
         'nssf_applicable',
         'paye_applicable',
     ];

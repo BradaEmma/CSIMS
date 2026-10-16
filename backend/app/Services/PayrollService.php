@@ -19,9 +19,9 @@ class PayrollService
 {
     public function __construct(private ApprovalWorkflowService $approvalService) {}
 
-    public function generatePayrollForGuard(int $guardId, string $period): array
+    public function generatePayrollForGuard(int $guardId, string $period, ?int $unpaidDays = null): array
     {
-        return DB::transaction(function () use ($guardId, $period) {
+        return DB::transaction(function () use ($guardId, $period, $unpaidDays) {
 
             $guard = Guard::find($guardId);
 
@@ -29,8 +29,8 @@ class PayrollService
                 return ['success' => false, 'message' => 'Guard not found'];
             }
 
-            if (!$guard->daily_rate || $guard->daily_rate <= 0) {
-                return ['success' => false, 'message' => 'Guard has no daily rate set — cannot calculate payroll'];
+            if (!$guard->monthly_basic || $guard->monthly_basic <= 0) {
+                return ['success' => false, 'message' => 'Guard has no monthly basic set — cannot calculate payroll'];
             }
 
             $existing = PayrollRecord::where('guard_id', $guardId)->where('period', $period)->first();
@@ -48,18 +48,26 @@ class PayrollService
             $daysWorked = $assignments->pluck('date')->unique()->count();
             $overtimeDays = $assignments->where('is_overtime', true)->pluck('date')->unique()->count();
 
-            if ($daysWorked === 0) {
-                return ['success' => false, 'message' => 'No roster assignments found for this guard in this period'];
+            $daysInMonth = \Carbon\Carbon::createFromDate((int) $year, (int) $month, 1)->daysInMonth;
+
+            // Unpaid days: use the value passed in; when regenerating a draft
+            // without a new value, keep what was entered last time.
+            $unpaidDays = $unpaidDays ?? (int) ($existing->unpaid_days ?? 0);
+
+            if ($unpaidDays < 0 || $unpaidDays > $daysInMonth) {
+                return ['success' => false, 'message' => "Unpaid days must be between 0 and {$daysInMonth} for this period"];
             }
 
-            $grossPay = $daysWorked * $guard->daily_rate;
+            // Model B: the daily rate is derived each month from the basic.
+            $dailyRate = $guard->monthly_basic / $daysInMonth;
+            $grossPay = round($guard->monthly_basic - ($unpaidDays * $dailyRate), 2);
 
             $restDayMultiplier = (float) (PayrollSetting::where('key', 'restday_overtime_multiplier')->value('value') ?? 1.5);
-            $restDayPremium = $overtimeDays * $guard->daily_rate * ($restDayMultiplier - 1);
+            $restDayPremium = $overtimeDays * $dailyRate * ($restDayMultiplier - 1);
 
             $standardShiftHours = (float) (PayrollSetting::where('key', 'standard_shift_hours')->value('value') ?? 12);
             $extraHoursMultiplier = (float) (PayrollSetting::where('key', 'extra_hours_overtime_multiplier')->value('value') ?? 1.0);
-            $hourlyRate = $guard->daily_rate / $standardShiftHours;
+            $hourlyRate = $dailyRate / $standardShiftHours;
 
             $extraHoursPay = Attendance::where('guard_id', $guardId)
                 ->whereIn('roster_assignment_id', $assignments->pluck('id'))
@@ -90,6 +98,7 @@ class PayrollService
 
             $data = [
                 'days_worked'             => $daysWorked,
+                'unpaid_days'             => $unpaidDays,
                 'overtime_days'           => $overtimeDays,
                 'gross_pay'               => $grossPay,
                 'overtime_pay'            => $overtimePay,
@@ -276,13 +285,18 @@ class PayrollService
 
         $amount = $amountOverride ?? $type->default_value;
 
+        // Model B: derive the daily rate for this period from the monthly basic.
+        [$periodYear, $periodMonth] = explode('-', $period);
+        $daysInMonth = \Carbon\Carbon::createFromDate((int) $periodYear, (int) $periodMonth, 1)->daysInMonth;
+        $dailyRate = $guard->monthly_basic ? $guard->monthly_basic / $daysInMonth : 0;
+
         if ($type->calculation_type === 'percentage') {
-            $amount = ($guard->daily_rate ?? 0) * ($amount / 100);
+            $amount = $dailyRate * ($amount / 100);
         }
 
-        if ($guard->daily_rate) {
+        if ($dailyRate > 0) {
             $maxMultiplier = (float) (PayrollSetting::where('key', 'max_deduction_multiplier')->value('value') ?? 31);
-            $ceiling = $guard->daily_rate * $maxMultiplier;
+            $ceiling = $dailyRate * $maxMultiplier;
 
             if ($amount > $ceiling) {
                 return [

@@ -46,6 +46,7 @@ class GuardController extends Controller
             'shift_type' => 'required|in:morning,night,either',
             'site_id' => 'nullable|exists:sites,id',
             'daily_rate' => 'required|numeric|min:0',
+            'monthly_basic' => 'nullable|numeric|min:0',
             'nssf_applicable' => 'nullable|boolean',
             'paye_applicable' => 'nullable|boolean',
         ]);
@@ -107,6 +108,7 @@ class GuardController extends Controller
             'status' => 'sometimes|in:active,inactive',
             'site_id' => 'sometimes|exists:sites,id',
             'daily_rate' => 'sometimes|numeric|min:0',
+            'monthly_basic' => 'sometimes|nullable|numeric|min:0',
             'nssf_applicable' => 'sometimes|boolean',
             'paye_applicable' => 'sometimes|boolean',
         ]);
