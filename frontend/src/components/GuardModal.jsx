@@ -139,7 +139,6 @@ function GuardModal({ guard, onClose, onSaved }) {
               name="daily_rate"
               value={form.daily_rate}
               onChange={handleChange}
-              required
               placeholder="e.g. 15000"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
             />
