@@ -128,9 +128,9 @@ class PayrollService
      * Salaried staff: fixed monthly salary. No roster / days_worked.
      * Same NSSF + PAYE rules as guards (Tanzania Mainland private sector).
      */
-    public function generatePayrollForSalariedEmployee(int $employeeId, string $period): array
+    public function generatePayrollForSalariedEmployee(int $employeeId, string $period, ?int $unpaidDays = null): array
     {
-        return DB::transaction(function () use ($employeeId, $period) {
+        return DB::transaction(function () use ($employeeId, $period, $unpaidDays) {
             $employee = Employee::find($employeeId);
 
             if (!$employee) {
@@ -153,7 +153,18 @@ class PayrollService
                 return ['success' => false, 'message' => "Payroll is already {$existing->status} for this period — cannot regenerate"];
             }
 
-            $grossPay = (float) $employee->monthly_salary;
+            [$year, $month] = explode('-', $period);
+            $daysInMonth = \Carbon\Carbon::createFromDate((int) $year, (int) $month, 1)->daysInMonth;
+
+            // Keep the stored value when regenerating a draft without a new one.
+            $unpaidDays = $unpaidDays ?? (int) ($existing->unpaid_days ?? 0);
+
+            if ($unpaidDays < 0 || $unpaidDays > $daysInMonth) {
+                return ['success' => false, 'message' => "Unpaid days must be between 0 and {$daysInMonth} for this period"];
+            }
+
+            $dailyValue = (float) $employee->monthly_salary / $daysInMonth;
+            $grossPay = round((float) $employee->monthly_salary - ($unpaidDays * $dailyValue), 2);
             $overtimePay = 0.0;
             $totalGross = $grossPay + $overtimePay;
 
@@ -177,6 +188,7 @@ class PayrollService
 
             $data = [
                 'days_worked'            => 0,
+                'unpaid_days'            => $unpaidDays,
                 'overtime_days'          => 0,
                 'gross_pay'              => $grossPay,
                 'overtime_pay'           => $overtimePay,

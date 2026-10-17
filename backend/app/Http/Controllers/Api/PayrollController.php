@@ -21,16 +21,17 @@ class PayrollController extends Controller
     public function generate(Request $request): JsonResponse
     {
         $request->validate([
-            'guard_id' => 'required|integer|exists:guards,id',
+            'guard_id' => 'required_without:employee_id|prohibits:employee_id|nullable|integer|exists:guards,id',
+            'employee_id' => 'required_without:guard_id|nullable|integer|exists:employees,id',
             'period' => 'required|date_format:Y-m',
             'unpaid_days' => 'nullable|integer|min:0|max:31',
         ]);
 
-        $result = $this->payrollService->generatePayrollForGuard(
-            $request->guard_id,
-            $request->period,
-            $request->filled('unpaid_days') ? (int) $request->unpaid_days : null
-        );
+        $unpaidDays = $request->filled('unpaid_days') ? (int) $request->unpaid_days : null;
+
+        $result = $request->filled('employee_id')
+            ? $this->payrollService->generatePayrollForSalariedEmployee((int) $request->employee_id, $request->period, $unpaidDays)
+            : $this->payrollService->generatePayrollForGuard((int) $request->guard_id, $request->period, $unpaidDays);
 
         return response()->json(
             ['message' => $result['message'] ?? null, 'data' => $result['data'] ?? null],
@@ -77,6 +78,10 @@ class PayrollController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Totals over the whole filtered set. Taken BEFORE paginate(), which
+        // applies limit/offset to the query it is called on.
+        $totalsQuery = (clone $query)->reorder();
+
         $perPage = max(1, min((int) $request->query('per_page', 30), 200));
         $paginated = $query->paginate($perPage);
 
@@ -101,7 +106,7 @@ class PayrollController extends Controller
         }
 
         // Totals over the whole filtered set, independent of the current page.
-        $totalsQuery = (clone $query)->reorder();
+        // $totalsQuery is built before paginate() above.
 
         return response()->json([
             'data' => $paginated,

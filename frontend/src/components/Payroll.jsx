@@ -133,11 +133,11 @@ function Payroll() {
     setMessage('')
     try {
       await apiPost('/payroll/generate', {
-        guard_id: record.guard_id,
+      ...(record.guard_id ? { guard_id: record.guard_id } : { employee_id: record.employee_id }),
         period,
         unpaid_days: value,
       })
-      setMessage(`Unpaid days for ${record.security_guard?.name || 'guard'} set to ${value}; payroll recalculated.`)
+      setMessage(`Unpaid days for ${record.security_guard?.name || record.employee?.name || 'employee'} set to ${value}; payroll recalculated.`)
       setEditingId(null)
       setUnpaidValue('')
       loadRecords()
@@ -278,7 +278,7 @@ function Payroll() {
                   <td className="py-2.5 font-medium text-slate-700">{r.security_guard?.name || r.employee?.name || '—'}</td>
                   <td className="py-2.5 text-slate-600">{r.days_worked}</td>
                   <td className="py-2.5 text-slate-600">
-                    {editingId === r.id && r.status === 'draft' && r.guard_id ? (
+                    {editingId === r.id && r.status === 'draft' && (r.guard_id || r.employee_id) ? (
                       <div className="flex items-center gap-1.5">
                         <input
                           type="number"
@@ -307,7 +307,7 @@ function Payroll() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <span>{r.unpaid_days ?? 0}</span>
-                        {r.status === 'draft' && r.guard_id && can('payroll.manage') && (
+                        {r.status === 'draft' && (r.guard_id || r.employee_id) && can('payroll.manage') && (
                           <button
                             onClick={() => startEditUnpaid(r)}
                             className="text-primary hover:underline text-xs font-medium"
