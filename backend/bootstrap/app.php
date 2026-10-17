@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'manager.department' => \App\Http\Middleware\EnsureManagerDepartment::class,
+        'department' => \App\Http\Middleware\EnsureDepartment::class,
     ]);
 
     $middleware->redirectGuestsTo(null);

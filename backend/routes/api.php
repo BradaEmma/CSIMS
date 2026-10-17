@@ -77,7 +77,7 @@ Route::prefix('v1')->group(function () {
         | SITES MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('sites')->group(function () {
+        Route::prefix('sites')->middleware('department:operations')->group(function () {
 
             Route::middleware('permission:sites.view')->group(function () {
                 Route::get('/',        [SiteController::class, 'index']);
@@ -99,7 +99,7 @@ Route::prefix('v1')->group(function () {
         | listing/creation; flat /posts/{id} for direct show/update/delete.
         |------------------------------------------------------------------
         */
-        Route::prefix('sites/{siteId}/posts')->middleware('permission:sites.view')->group(function () {
+        Route::prefix('sites/{siteId}/posts')->middleware(['permission:sites.view', 'department:operations'])->group(function () {
             Route::get('/', [PostController::class, 'index']);
 
             Route::middleware('permission:sites.manage')->group(function () {
@@ -107,7 +107,7 @@ Route::prefix('v1')->group(function () {
             });
         });
 
-        Route::prefix('posts')->group(function () {
+        Route::prefix('posts')->middleware('department:operations')->group(function () {
 
             Route::middleware('permission:sites.view')->group(function () {
                 Route::get('/{id}', [PostController::class, 'show']);
@@ -124,7 +124,7 @@ Route::prefix('v1')->group(function () {
         | GUARDS MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('guards')->group(function () {
+        Route::prefix('guards')->middleware('department:operations')->group(function () {
 
             Route::middleware('role:admin|supervisor|manager')->group(function () {
                 Route::get('/',     [GuardController::class, 'index']);
@@ -143,7 +143,7 @@ Route::prefix('v1')->group(function () {
         | GUARD ASSIGNMENTS MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('assignments')->middleware('role:admin|supervisor')->group(function () {
+        Route::prefix('assignments')->middleware(['role:admin|supervisor', 'department:operations'])->group(function () {
             Route::get('/', [GuardAssignmentController::class, 'index']);
 
             Route::middleware('role:admin')->group(function () {
@@ -157,7 +157,7 @@ Route::prefix('v1')->group(function () {
         | ATTENDANCE MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('attendance')->group(function () {
+        Route::prefix('attendance')->middleware('department:operations')->group(function () {
 
             Route::middleware('role:admin|supervisor')->group(function () {
                 Route::post('/check-in',  [AttendanceController::class, 'checkIn']);
@@ -173,7 +173,7 @@ Route::prefix('v1')->group(function () {
         | ROSTER MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('roster')->group(function () {
+        Route::prefix('roster')->middleware('department:operations')->group(function () {
 
             Route::middleware('permission:roster.view')->group(function () {
                 Route::get('/',         [RosterController::class, 'index']);
@@ -208,13 +208,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/',                 [IncidentController::class, 'store']);
             Route::post('/{id}/attachments', [IncidentController::class, 'uploadAttachment']);
 
-        Route::middleware('permission:incidents.view')->group(function () {
+        Route::middleware(['permission:incidents.view', 'department:operations'])->group(function () {
                 Route::get('/',               [IncidentController::class, 'index']);
                 Route::get('/summary',        [IncidentController::class, 'summary']);
                 Route::get('/{id}',           [IncidentController::class, 'show']);
             });
 
-            Route::middleware('permission:incidents.manage')->group(function () {
+            Route::middleware(['permission:incidents.manage', 'department:operations'])->group(function () {
                 Route::post('/{id}/resolve',  [IncidentController::class, 'resolve']);
                 Route::patch('/{id}/status',  [IncidentController::class, 'updateStatus']);
             });
