@@ -274,14 +274,25 @@ function Dashboard() {
   const user = JSON.parse(localStorage.getItem('csims_user') || '{}')
 
   let content
-  if (roles.includes('admin') || roles.includes('supervisor') || roles.includes('manager')) {
+  const isStaffRole = roles.includes('admin') || roles.includes('supervisor') || roles.includes('manager')
+  const deptCode = user.department?.code
+  const seesOperations =
+    roles.includes('admin') || roles.includes('hr') || !deptCode || deptCode === 'operations'
+
+  if (isStaffRole && seesOperations) {
     content = <OperationsDashboard />
   } else if (roles.includes('hr')) {
     content = <HrDashboard />
   } else if (roles.includes('accountant')) {
     content = <FinanceDashboard />
   } else {
-    content = <p className="text-slate-500">No dashboard content is available for your role yet.</p>
+    content = (
+      <p className="text-slate-500">
+        {isStaffRole && user.department?.name
+          ? `No dashboard is available for the ${user.department.name} department yet.`
+          : 'No dashboard content is available for your role yet.'}
+      </p>
+    )
   }
 
   return (

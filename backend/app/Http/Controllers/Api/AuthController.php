@@ -24,7 +24,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->load('employee');
+        $user->load('employee', 'department');
 
         return response()->json([
             'user' => $user,

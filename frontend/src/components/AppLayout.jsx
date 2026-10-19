@@ -41,15 +41,15 @@ const navGroups = [
     items: [
       { label: 'Clients', path: '/clients', icon: Briefcase, permission: 'clients.view' },
       { label: 'Contracts', path: '/contracts', icon: FileText, permission: 'contracts.view' },
-      { label: 'Sites', path: '/sites', icon: Building2, permission: 'sites.view' },
+      { label: 'Sites', path: '/sites', icon: Building2, permission: 'sites.view', departments: ['operations'] },
       // Roster stays role-gated: roster.view is also held by 'supervisor'
       // per PermissionSeeder, but supervisor was never in this item's
       // roles list — converting would add a role that shouldn't see it.
-      { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'manager'] },
-      { label: 'Guards', path: '/guards', icon: Users, permission: 'guards.view' },
-      { label: 'Assignments', path: '/assignments', icon: UserPlus, permission: 'assignments.view' },
-      { label: 'Attendance', path: '/attendance', icon: CheckSquare, permission: 'attendance.view' },
-      { label: 'Incidents', path: '/incidents', icon: AlertTriangle, permission: 'incidents.view' },
+      { label: 'Roster', path: '/roster', icon: CalendarDays, roles: ['admin', 'manager'], departments: ['operations'] },
+      { label: 'Guards', path: '/guards', icon: Users, permission: 'guards.view', departments: ['operations'] },
+      { label: 'Assignments', path: '/assignments', icon: UserPlus, permission: 'assignments.view', departments: ['operations'] },
+      { label: 'Attendance', path: '/attendance', icon: CheckSquare, permission: 'attendance.view', departments: ['operations'] },
+      { label: 'Incidents', path: '/incidents', icon: AlertTriangle, permission: 'incidents.view', departments: ['operations'] },
       { label: 'Reports', path: '/reports', icon: BarChart3 },
     ],
   },
@@ -97,7 +97,21 @@ function getInitials(name) {
 // legacy role check — used only where no exactly-matching permission
 // exists yet (see comments above on Roster/Guards/Incidents/etc.).
 // An item with neither is visible to everyone (unchanged default).
+// Mirrors the backend 'department' middleware: admin, hr and users with no
+// department are unrestricted; everyone else must be in a listed department.
+// Old sessions have no department stored, so they keep the previous behaviour
+// until the next login.
+function departmentAllows(item, userRoles) {
+  if (!item.departments) return true
+  if (userRoles.includes('admin') || userRoles.includes('hr')) return true
+  const user = JSON.parse(localStorage.getItem('csims_user') || '{}')
+  const code = user.department?.code
+  if (!code) return true
+  return item.departments.includes(code)
+}
+
 function isItemVisible(item, userRoles) {
+  if (!departmentAllows(item, userRoles)) return false
   if (item.permission) return can(item.permission)
   if (!item.roles) return true
   return item.roles.some((role) => userRoles.includes(role))
