@@ -138,6 +138,18 @@ class IncidentController extends Controller
             'file' => 'required|file|image|max:10240', // 10MB max, images only
         ]);
 
+        $incident = Incident::find($id);
+
+        if (!$incident) {
+            return response()->json(['message' => 'Incident not found'], 404);
+        }
+
+        $user = $request->user();
+
+        if ((int) $incident->reported_by !== (int) $user->id && !$user->can('incidents.manage')) {
+            return response()->json(['message' => 'You can only attach files to incidents you reported.'], 403);
+        }
+
         $path = $request->file('file')->store('incident-attachments', 'public');
 
         $result = $this->incidentService->addAttachment($id, $path, $request->user()->id);

@@ -140,13 +140,25 @@ class ApprovalController extends Controller
      * GET /api/v1/approvals/{id}
      * Single request detail + full action history.
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $approvalRequest = ApprovalRequest::with(['workflow.levels', 'submitter', 'actions.user'])
             ->find($id);
 
         if (!$approvalRequest) {
             return response()->json(['message' => 'Approval request not found'], 404);
+        }
+
+        $user = $request->user();
+        $approverRoles = $approvalRequest->workflow?->levels->pluck('approver_role')->filter()->all() ?? [];
+
+        $allowed = $user->hasRole('admin')
+            || (int) $approvalRequest->submitted_by === (int) $user->id
+            || $approvalRequest->actions->contains('user_id', $user->id)
+            || (!empty($approverRoles) && $user->hasAnyRole($approverRoles));
+
+        if (!$allowed) {
+            return response()->json(['message' => 'You do not have access to this approval request.'], 403);
         }
 
         return response()->json(['data' => $approvalRequest]);
