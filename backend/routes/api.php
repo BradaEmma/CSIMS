@@ -126,12 +126,12 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('guards')->middleware('department:operations')->group(function () {
 
-            Route::middleware('role:admin|supervisor|manager')->group(function () {
+            Route::middleware('permission:guards.view')->group(function () {
                 Route::get('/',     [GuardController::class, 'index']);
                 Route::get('/{id}', [GuardController::class, 'show']);
             });
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:guards.manage')->group(function () {
                 Route::post('/',        [GuardController::class, 'store']);
                 Route::put('/{id}',     [GuardController::class, 'update']);
                 Route::delete('/{id}',  [GuardController::class, 'destroy']);
@@ -143,10 +143,10 @@ Route::prefix('v1')->group(function () {
         | GUARD ASSIGNMENTS MODULE
         |------------------------------------------------------------------
         */
-        Route::prefix('assignments')->middleware(['role:admin|supervisor', 'department:operations'])->group(function () {
+        Route::prefix('assignments')->middleware(['permission:assignments.view', 'department:operations'])->group(function () {
             Route::get('/', [GuardAssignmentController::class, 'index']);
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:assignments.manage')->group(function () {
                 Route::post('/assign',      [GuardAssignmentController::class, 'assign']);
                 Route::post('/end/{id}',    [GuardAssignmentController::class, 'endAssignment']);
             });
@@ -159,9 +159,12 @@ Route::prefix('v1')->group(function () {
         */
         Route::prefix('attendance')->middleware('department:operations')->group(function () {
 
-            Route::middleware('role:admin|supervisor')->group(function () {
+            Route::middleware('permission:attendance.record')->group(function () {
                 Route::post('/check-in',  [AttendanceController::class, 'checkIn']);
                 Route::post('/check-out', [AttendanceController::class, 'checkOut']);
+            });
+
+            Route::middleware('permission:attendance.view')->group(function () {
                 Route::get('/today',              [AttendanceController::class, 'today']);
                 Route::get('/guard/{guardId}',    [AttendanceController::class, 'guardHistory']);
                 Route::get('/site/{siteId}',      [AttendanceController::class, 'siteAttendance']);
@@ -192,7 +195,7 @@ Route::prefix('v1')->group(function () {
         | DASHBOARD MODULE
         |------------------------------------------------------------------
         */
-                Route::prefix('dashboard')->middleware('role:admin|supervisor|manager')->group(function () {
+            Route::prefix('dashboard')->middleware('role:admin|supervisor|manager')->group(function () {
             Route::get('/live-shift',  [DashboardController::class, 'liveShift']);
             Route::get('/admin',       [DashboardController::class, 'adminSummary']);
             Route::get('/supervisor',  [SupervisorDashboardController::class, 'index']);
@@ -339,10 +342,14 @@ Route::prefix('v1')->group(function () {
                 Route::get('/{id}', [EmployeeController::class, 'show']);
             });
 
-            Route::middleware('role:admin')->group(function () {
+            Route::middleware('permission:employees.manage')->group(function () {
                 Route::post('/',        [EmployeeController::class, 'store']);
                 Route::put('/{id}',     [EmployeeController::class, 'update']);
                 Route::delete('/{id}',  [EmployeeController::class, 'destroy']);
+            });
+
+            // Linking an employee to a login account stays admin-only.
+            Route::middleware('role:admin')->group(function () {
                 Route::put('/{id}/link-user', [EmployeeController::class, 'linkUser']);
             });
         });

@@ -46,6 +46,11 @@ class EmployeeController extends Controller
             'paye_applicable' => 'sometimes|boolean',
         ]);
 
+        // Pay fields are payroll-sensitive: only users who can manage payroll may set them.
+        if (!$request->user()->can('payroll.manage')) {
+            unset($validated['pay_type'], $validated['monthly_salary'], $validated['nssf_applicable'], $validated['paye_applicable']);
+        }
+
         $employee = Employee::create([
             ...$validated,
             'status' => $validated['status'] ?? 'active',
@@ -138,6 +143,11 @@ class EmployeeController extends Controller
             'nssf_applicable' => 'sometimes|boolean',
             'paye_applicable' => 'sometimes|boolean',
         ]);
+
+        // Pay fields are payroll-sensitive: only users who can manage payroll may change them.
+        if (!$request->user()->can('payroll.manage')) {
+            unset($validated['pay_type'], $validated['monthly_salary'], $validated['nssf_applicable'], $validated['paye_applicable']);
+        }
 
         $employee->update($validated);
 
