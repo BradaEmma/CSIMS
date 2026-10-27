@@ -40,19 +40,14 @@ class EmployeeController extends Controller
             'position' => 'nullable|string',
             'status' => 'nullable|in:active,inactive',
             'hire_date' => 'nullable|date',
-            'pay_type' => 'sometimes|in:daily,monthly',
-            'monthly_salary' => 'nullable|numeric|gt:0|required_if:pay_type,monthly',
+            'monthly_salary' => 'sometimes|nullable|numeric|gt:0',
             'nssf_applicable' => 'sometimes|boolean',
             'paye_applicable' => 'sometimes|boolean',
         ]);
 
-        // Pay fields are payroll-sensitive: only users who can manage payroll may set them.
-        if (!$request->user()->can('payroll.manage')) {
-            unset($validated['pay_type'], $validated['monthly_salary'], $validated['nssf_applicable'], $validated['paye_applicable']);
-        }
-
         $employee = Employee::create([
             ...$validated,
+            'pay_type' => 'monthly', // company policy: employees are always monthly-paid
             'status' => $validated['status'] ?? 'active',
             'created_by' => Auth::id(),
         ]);
@@ -138,16 +133,12 @@ class EmployeeController extends Controller
             'position' => 'sometimes|nullable|string',
             'status' => 'sometimes|in:active,inactive',
             'hire_date' => 'sometimes|nullable|date',
-            'pay_type' => 'sometimes|in:daily,monthly',
-            'monthly_salary' => 'sometimes|nullable|numeric|gt:0|required_if:pay_type,monthly',
+            'monthly_salary' => 'nullable|numeric|gt:0',
             'nssf_applicable' => 'sometimes|boolean',
             'paye_applicable' => 'sometimes|boolean',
         ]);
 
-        // Pay fields are payroll-sensitive: only users who can manage payroll may change them.
-        if (!$request->user()->can('payroll.manage')) {
-            unset($validated['pay_type'], $validated['monthly_salary'], $validated['nssf_applicable'], $validated['paye_applicable']);
-        }
+    
 
         $employee->update($validated);
 
