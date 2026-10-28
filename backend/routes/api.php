@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\MoneyRequestController;
@@ -388,6 +389,10 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}',  [DepartmentController::class, 'destroy']);
             });
         });
+
+        // Approved positions (each belongs to a department). Read-only for now.
+        Route::get('/positions', [PositionController::class, 'index'])
+            ->middleware('permission:employees.view');
 
         /*
         |------------------------------------------------------------------

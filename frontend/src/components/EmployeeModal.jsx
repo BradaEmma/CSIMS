@@ -4,13 +4,12 @@ import { apiGet, apiPost, apiPut } from '../lib/api'
 function EmployeeModal({ employee, onClose, onSaved }) {
   const isEdit = !!employee
 
-  const [departments, setDepartments] = useState([])
+  const [positions, setPositions] = useState([])
   const [form, setForm] = useState({
     name: employee?.name || '',
     phone: employee?.phone || '',
     email: employee?.email || '',
     national_id: employee?.national_id || '',
-    department_id: employee?.department_id || '',
     position: employee?.position || '',
     hire_date: employee?.hire_date || '',
     status: employee?.status || 'active',
@@ -22,8 +21,8 @@ function EmployeeModal({ employee, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    apiGet('/departments')
-      .then((res) => setDepartments(Array.isArray(res) ? res : res.data || []))
+  apiGet('/positions')
+      .then((res) => setPositions(Array.isArray(res) ? res : res.data || []))
       .catch(() => {})
   }, [])
 
@@ -42,7 +41,6 @@ function EmployeeModal({ employee, onClose, onSaved }) {
       phone: form.phone,
       email: form.email || null,
       national_id: form.national_id || null,
-      department_id: form.department_id || null,
       position: form.position || null,
       hire_date: form.hire_date || null,
     }
@@ -130,29 +128,26 @@ function EmployeeModal({ employee, onClose, onSaved }) {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-500 block mb-1">Department</label>
+              <label className="text-xs font-medium text-slate-500 block mb-1">Position</label>
               <select
-                name="department_id"
-                value={form.department_id}
+                name="position"
+                value={form.position}
                 onChange={handleChange}
+                required
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
               >
-                <option value="">— None —</option>
-                {departments.map((department) => (
-                  <option key={department.id} value={department.id}>{department.name}</option>
+                <option value="">— Select position —</option>
+                {positions.map((p) => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-500 block mb-1">Position</label>
-              <input
-                name="position"
-                value={form.position}
-                onChange={handleChange}
-                placeholder="e.g. Accountant"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-              />
+              <label className="text-xs font-medium text-slate-500 block mb-1">Department</label>
+              <div className="w-full border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm text-slate-600">
+                {positions.find((p) => p.name === form.position)?.department?.name || 'Set automatically from the position'}
+              </div>
             </div>
 
             <div>

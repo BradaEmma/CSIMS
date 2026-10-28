@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\Position;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,14 +37,18 @@ class EmployeeController extends Controller
             'phone' => 'required|string|unique:employees',
             'email' => 'nullable|email|unique:employees',
             'national_id' => 'nullable|string|unique:employees',
-            'department_id' => 'nullable|exists:departments,id',
-            'position' => 'nullable|string',
+            'position' => 'required|string|exists:positions,name',
             'status' => 'nullable|in:active,inactive',
             'hire_date' => 'nullable|date',
             'monthly_salary' => 'sometimes|nullable|numeric|gt:0',
             'nssf_applicable' => 'sometimes|boolean',
             'paye_applicable' => 'sometimes|boolean',
         ]);
+
+        // Department always comes from the approved position, never from the request.
+        $position = Position::where('name', $validated['position'])->firstOrFail();
+        $validated['position'] = $position->name;
+        $validated['department_id'] = $position->department_id;
 
         $employee = Employee::create([
             ...$validated,
@@ -129,8 +134,7 @@ class EmployeeController extends Controller
             'phone' => 'sometimes|string|unique:employees,phone,' . $id,
             'email' => 'sometimes|nullable|email|unique:employees,email,' . $id,
             'national_id' => 'sometimes|nullable|string|unique:employees,national_id,' . $id,
-            'department_id' => 'sometimes|nullable|exists:departments,id',
-            'position' => 'sometimes|nullable|string',
+            'position' => 'sometimes|required|string|exists:positions,name',
             'status' => 'sometimes|in:active,inactive',
             'hire_date' => 'sometimes|nullable|date',
             'monthly_salary' => 'nullable|numeric|gt:0',
@@ -139,6 +143,12 @@ class EmployeeController extends Controller
         ]);
 
     
+
+        if (isset($validated['position'])) {
+            $position = Position::where('name', $validated['position'])->firstOrFail();
+            $validated['position'] = $position->name;
+            $validated['department_id'] = $position->department_id;
+        }
 
         $employee->update($validated);
 
