@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import DepartmentModal from './DepartmentModal'
 import ConfirmModal from './ConfirmModal'
+import PositionsSection from './PositionsSection'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ isActive }) {
@@ -140,7 +141,9 @@ function Departments() {
         </div>
       )}
 
-            {modalOpen && canManage && (
+        <PositionsSection />
+
+      {modalOpen && canManage && (
         <DepartmentModal
           department={editingDepartment}
           onClose={() => setModalOpen(false)}

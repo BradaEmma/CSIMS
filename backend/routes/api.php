@@ -394,6 +394,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/positions', [PositionController::class, 'index'])
             ->middleware('permission:employees.view');
 
+        // Changing the approved position list is admin-only.
+        Route::middleware('role:admin')->group(function () {
+            Route::post('/positions', [PositionController::class, 'store']);
+            Route::put('/positions/{id}', [PositionController::class, 'update']);
+            Route::delete('/positions/{id}', [PositionController::class, 'destroy']);
+        });
+
         /*
         |------------------------------------------------------------------
         | DOCUMENTS MODULE
