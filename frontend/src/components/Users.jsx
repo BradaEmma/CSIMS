@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import UserModal from './UserModal'
+import SearchBar from './SearchBar'
 import { apiGet } from '../lib/api'
 
 function Users() {
@@ -12,6 +13,17 @@ function Users() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
+
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleUsers = query
+    ? users.filter((x) =>
+        [x.name, x.email, x.department?.name, (x.roles || []).map((r) => r.name).join(' ')].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : users
 
   function loadUsers() {
     setLoading(true)
@@ -53,7 +65,7 @@ function Users() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Users ({users.length})
+              All Users ({query ? `${visibleUsers.length} of ` : ''}{users.length})
             </h2>
             {canManage && (
               <button
@@ -64,6 +76,12 @@ function Users() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, email, department or role..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -76,7 +94,7 @@ function Users() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {visibleUsers.map((user) => (
                 <tr key={user.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{user.name}</td>
                   <td className="py-2.5 text-slate-600">{user.email}</td>
@@ -98,6 +116,10 @@ function Users() {
               ))}
             </tbody>
           </table>
+
+          {users.length > 0 && visibleUsers.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No users match your search.</p>
+          )}
 
           {users.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No users found.</p>

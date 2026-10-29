@@ -3,6 +3,7 @@ import AppLayout from './AppLayout'
 import SiteModal from './SiteModal'
 import PostModal from './PostModal'
 import ConfirmModal from './ConfirmModal'
+import SearchBar from './SearchBar'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -28,6 +29,17 @@ function Sites() {
   const [editingSite, setEditingSite] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [confirmingSite, setConfirmingSite] = useState(null)
+
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleSites = query
+    ? sites.filter((x) =>
+        [x.name, x.zone, x.location, x.status, (x.posts || []).map((p) => p.name).join(' ')].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : sites
 
   const [expandedSiteId, setExpandedSiteId] = useState(null)
   const [postModalOpen, setPostModalOpen] = useState(false)
@@ -135,7 +147,7 @@ function Sites() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Sites ({sites.length})
+              All Sites ({query ? `${visibleSites.length} of ` : ''}{sites.length})
             </h2>
               {canManage && (
               <button
@@ -146,6 +158,12 @@ function Sites() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by site, zone, location or post..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -160,7 +178,7 @@ function Sites() {
               </tr>
             </thead>
             <tbody>
-              {sites.map((site) => {
+              {visibleSites.map((site) => {
                 const posts = site.posts || []
                 const isExpanded = expandedSiteId === site.id
                 return (
@@ -275,6 +293,10 @@ function Sites() {
               })}
             </tbody>
           </table>
+
+          {sites.length > 0 && visibleSites.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No sites match your search.</p>
+          )}
 
           {sites.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No sites found.</p>

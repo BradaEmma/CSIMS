@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import ContractModal from './ContractModal'
 import ConfirmModal from './ConfirmModal'
+import SearchBar from './SearchBar'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -33,6 +34,17 @@ function Contracts() {
   const [editingContract, setEditingContract] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [confirmingContract, setConfirmingContract] = useState(null)
+
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleContracts = query
+    ? contracts.filter((x) =>
+        [x.reference_number, x.client?.name, x.start_date, x.end_date, x.monthly_fee, x.status].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : contracts
 
   function loadContracts() {
     setLoading(true)
@@ -92,7 +104,7 @@ function Contracts() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Contracts ({contracts.length})
+              All Contracts ({query ? `${visibleContracts.length} of ` : ''}{contracts.length})
             </h2>
             {canManage && (
               <button
@@ -103,6 +115,12 @@ function Contracts() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by reference, client, date or status..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -118,7 +136,7 @@ function Contracts() {
               </tr>
             </thead>
             <tbody>
-              {contracts.map((contract) => (
+              {visibleContracts.map((contract) => (
                 <tr key={contract.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{contract.reference_number}</td>
                   <td className="py-2.5 text-slate-600">{contract.client?.name || '—'}</td>
@@ -148,6 +166,10 @@ function Contracts() {
               ))}
             </tbody>
           </table>
+
+          {contracts.length > 0 && visibleContracts.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No contracts match your search.</p>
+          )}
 
           {contracts.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No contracts found.</p>

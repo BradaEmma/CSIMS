@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import ClientModal from './ClientModal'
 import ConfirmModal from './ConfirmModal'
+import SearchBar from './SearchBar'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -27,6 +28,17 @@ function Clients() {
   const [editingClient, setEditingClient] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [confirmingClient, setConfirmingClient] = useState(null)
+
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleClients = query
+    ? clients.filter((x) =>
+        [x.name, x.contact_person, x.phone, x.email, x.status].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : clients
 
   function loadClients() {
     setLoading(true)
@@ -86,7 +98,7 @@ function Clients() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Clients ({clients.length})
+              All Clients ({query ? `${visibleClients.length} of ` : ''}{clients.length})
             </h2>
             {canManage && (
               <button
@@ -97,6 +109,12 @@ function Clients() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, contact, phone or email..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -110,7 +128,7 @@ function Clients() {
               </tr>
             </thead>
             <tbody>
-              {clients.map((client) => (
+              {visibleClients.map((client) => (
                 <tr key={client.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{client.name}</td>
                   <td className="py-2.5 text-slate-600">{client.contact_person || '—'}</td>
@@ -138,6 +156,10 @@ function Clients() {
               ))}
             </tbody>
           </table>
+
+          {clients.length > 0 && visibleClients.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No clients match your search.</p>
+          )}
 
           {clients.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No clients found.</p>

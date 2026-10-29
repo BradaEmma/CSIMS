@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import GuardAssignmentModal from './GuardAssignmentModal'
 import ConfirmModal from './ConfirmModal'
+import SearchBar from './SearchBar'
 import { apiGet, apiPost } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -23,6 +24,17 @@ function GuardAssignments() {
   const [modalOpen, setModalOpen] = useState(false)
   const [endingId, setEndingId] = useState(null)
   const [confirmingAssignment, setConfirmingAssignment] = useState(null)
+
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleAssignments = query
+    ? assignments.filter((x) =>
+        [x.assigned_guard?.name, x.site?.name, x.start_date, x.end_date, x.status].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : assignments
 
   const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
   const canAssign = roles.includes('admin')
@@ -74,7 +86,7 @@ function GuardAssignments() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Assignments ({assignments.length})
+              All Assignments ({query ? `${visibleAssignments.length} of ` : ''}{assignments.length})
             </h2>
             {canAssign && (
               <button
@@ -85,6 +97,12 @@ function GuardAssignments() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by guard, site, date or status..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -98,7 +116,7 @@ function GuardAssignments() {
               </tr>
             </thead>
             <tbody>
-              {assignments.map((a) => (
+              {visibleAssignments.map((a) => (
                 <tr key={a.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{a.assigned_guard?.name || '—'}</td>
                   <td className="py-2.5 text-slate-600">{a.site?.name || '—'}</td>
@@ -122,6 +140,10 @@ function GuardAssignments() {
               ))}
             </tbody>
           </table>
+
+          {assignments.length > 0 && visibleAssignments.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No assignments match your search.</p>
+          )}
 
           {assignments.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No assignments found.</p>

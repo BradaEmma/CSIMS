@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import IncidentModal from './IncidentModal'
 import ResolveModal from './ResolveModal'
+import SearchBar from './SearchBar'
 import { apiGet } from '../lib/api'
 
 function SeverityBadge({ severity }) {
@@ -45,6 +46,17 @@ function Incidents() {
   const [modalOpen, setModalOpen] = useState(false)
   const [resolvingIncident, setResolvingIncident] = useState(null)
 
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleIncidents = query
+    ? incidents.filter((x) =>
+        [x.site?.name, x.incident_type?.name, x.severity, x.status, x.reported_by?.name].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : incidents
+
   function loadIncidents() {
     setLoading(true)
     apiGet('/incidents')
@@ -75,7 +87,7 @@ function Incidents() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Incidents ({incidents.length})
+              All Incidents ({query ? `${visibleIncidents.length} of ` : ''}{incidents.length})
             </h2>
             <button
               onClick={() => setModalOpen(true)}
@@ -84,6 +96,12 @@ function Incidents() {
               + Report Incident
             </button>
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by site, type, severity, status or reporter..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -98,7 +116,7 @@ function Incidents() {
               </tr>
             </thead>
             <tbody>
-              {incidents.map((incident) => (
+              {visibleIncidents.map((incident) => (
                 <tr key={incident.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 text-slate-600">
                     {new Date(incident.occurred_at).toLocaleDateString()}
@@ -122,6 +140,10 @@ function Incidents() {
               ))}
             </tbody>
           </table>
+
+          {incidents.length > 0 && visibleIncidents.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No incidents match your search.</p>
+          )}
 
           {incidents.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No incidents found.</p>
