@@ -47,6 +47,11 @@ class Employee extends Model
     return $this->hasOne(Guard::class);
     }
 
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

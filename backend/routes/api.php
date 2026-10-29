@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EmployeeDocumentController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\ApprovalController;
@@ -341,12 +342,15 @@ Route::prefix('v1')->group(function () {
             Route::middleware('permission:employees.view')->group(function () {
                 Route::get('/',     [EmployeeController::class, 'index']);
                 Route::get('/{id}', [EmployeeController::class, 'show']);
+                Route::get('/{id}/documents', [EmployeeDocumentController::class, 'index']);
             });
 
             Route::middleware('permission:employees.manage')->group(function () {
                 Route::post('/',        [EmployeeController::class, 'store']);
                 Route::put('/{id}',     [EmployeeController::class, 'update']);
                 Route::delete('/{id}',  [EmployeeController::class, 'destroy']);
+                Route::post('/{id}/documents', [EmployeeDocumentController::class, 'store']);
+                Route::delete('/{id}/documents/{docId}', [EmployeeDocumentController::class, 'destroy']);
             });
 
             // Linking an employee to a login account stays admin-only.

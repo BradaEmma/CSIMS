@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost, apiPut } from '../lib/api'
+import EmployeePhotoUpload from './EmployeePhotoUpload'
+import EmployeeDocuments from './EmployeeDocuments'
 
 function EmployeeModal({ employee, onClose, onSaved }) {
   const isEdit = !!employee
@@ -72,8 +74,9 @@ function EmployeeModal({ employee, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
       <div className="bg-white rounded-xl w-full max-w-md max-h-[85vh] flex flex-col">
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">
+        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-slate-100 flex flex-col items-center">
+          <EmployeePhotoUpload employeeId={employee?.id} employeeName={form.name || employee?.name} />
+          <h2 className="text-lg font-bold text-slate-800 mt-3">
             {isEdit ? 'Edit Employee' : 'Add Employee'}
           </h2>
         </div>
@@ -206,6 +209,10 @@ function EmployeeModal({ employee, onClose, onSaved }) {
               </div>
             )}
           </form>
+
+          <div className="border-t border-slate-100 pt-4 mt-4">
+            <EmployeeDocuments employeeId={employee?.id} />
+          </div>
         </div>
 
         <div className="px-6 py-4 flex-shrink-0 border-t border-slate-100 flex justify-end gap-3">
