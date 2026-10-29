@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import GuardModal from './GuardModal'
 import ConfirmModal from './ConfirmModal'
+import SearchBar from './SearchBar'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -24,6 +25,16 @@ function Guards() {
   const [editingGuard, setEditingGuard] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [confirmingGuard, setConfirmingGuard] = useState(null)
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleGuards = query
+    ? guards.filter((g) =>
+        [g.name, g.phone, g.national_id, g.shift_type, g.site?.name, g.status].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : guards
 
   const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
   const canManage = roles.includes('admin')
@@ -86,7 +97,7 @@ function Guards() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Guards ({guards.length})
+              All Guards ({query ? `${visibleGuards.length} of ` : ''}{guards.length})
             </h2>
             {canManage && (
               <button
@@ -97,6 +108,12 @@ function Guards() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, phone, ID, shift or site..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -111,7 +128,7 @@ function Guards() {
               </tr>
             </thead>
             <tbody>
-              {guards.map((guard) => (
+              {visibleGuards.map((guard) => (
                 <tr key={guard.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{guard.name}</td>
                   <td className="py-2.5 text-slate-600">{guard.phone}</td>
@@ -140,6 +157,10 @@ function Guards() {
               ))}
             </tbody>
           </table>
+
+          {guards.length > 0 && visibleGuards.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No guards match your search.</p>
+          )}
 
           {guards.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No guards found.</p>

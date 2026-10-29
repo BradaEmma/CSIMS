@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from './AppLayout'
 import EmployeeModal from './EmployeeModal'
 import ConfirmModal from './ConfirmModal'
+import SearchBar from './SearchBar'
 import { apiGet, apiDelete } from '../lib/api'
 
 function StatusBadge({ status }) {
@@ -27,6 +28,16 @@ function Employees() {
   const [editingEmployee, setEditingEmployee] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [confirmingEmployee, setConfirmingEmployee] = useState(null)
+  const [search, setSearch] = useState('')
+
+  const query = search.trim().toLowerCase()
+  const visibleEmployees = query
+    ? employees.filter((e) =>
+        [e.name, e.phone, e.email, e.national_id, e.position, e.department?.name, e.status].some((v) =>
+          (v || '').toString().toLowerCase().includes(query)
+        )
+      )
+    : employees
 
   function loadEmployees() {
     setLoading(true)
@@ -86,7 +97,7 @@ function Employees() {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-slate-800">
-              All Employees ({employees.length})
+              All Employees ({query ? `${visibleEmployees.length} of ` : ''}{employees.length})
             </h2>
             {canManage && (
               <button
@@ -97,6 +108,12 @@ function Employees() {
               </button>
             )}
           </div>
+
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, phone, position or department..."
+          />
 
           <table className="w-full text-sm">
             <thead>
@@ -110,7 +127,7 @@ function Employees() {
               </tr>
             </thead>
             <tbody>
-              {employees.map((employee) => (
+              {visibleEmployees.map((employee) => (
                 <tr key={employee.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 font-medium text-slate-700">{employee.name}</td>
                   <td className="py-2.5 text-slate-600">{employee.phone}</td>
@@ -138,6 +155,10 @@ function Employees() {
               ))}
             </tbody>
           </table>
+
+          {employees.length > 0 && visibleEmployees.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-8">No employees match your search.</p>
+          )}
 
           {employees.length === 0 && (
             <p className="text-slate-400 text-sm text-center py-8">No employees found.</p>
