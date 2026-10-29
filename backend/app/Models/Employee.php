@@ -26,7 +26,7 @@ class Employee extends Model
     ];
 
     protected $casts = [
-        'hire_date' => 'date',
+        'hire_date' => 'date:Y-m-d',
         'monthly_salary' => 'decimal:2',
         'nssf_applicable' => 'boolean',
         'paye_applicable' => 'boolean',
