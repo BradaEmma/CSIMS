@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import GuardModal from './GuardModal'
 import ConfirmModal from './ConfirmModal'
@@ -36,8 +37,7 @@ function Guards() {
       )
     : guards
 
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin')
+  const canManage = can('guards.manage')
 
   function loadGuards() {
     setLoading(true)

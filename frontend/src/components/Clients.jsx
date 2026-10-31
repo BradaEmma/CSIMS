@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import ClientModal from './ClientModal'
 import ConfirmModal from './ConfirmModal'
@@ -18,8 +19,7 @@ function StatusBadge({ status }) {
 }
 
 function Clients() {
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin')
+  const canManage = can('clients.manage')
 
   const [clients, setClients] = useState([])
   const [error, setError] = useState('')

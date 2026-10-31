@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import GuardAssignmentModal from './GuardAssignmentModal'
 import ConfirmModal from './ConfirmModal'
@@ -36,8 +37,7 @@ function GuardAssignments() {
       )
     : assignments
 
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canAssign = roles.includes('admin')
+  const canAssign = can('assignments.manage')
 
   function loadAssignments() {
     setLoading(true)

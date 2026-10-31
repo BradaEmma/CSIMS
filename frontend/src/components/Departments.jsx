@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import DepartmentModal from './DepartmentModal'
 import ConfirmModal from './ConfirmModal'
@@ -17,8 +18,7 @@ function StatusBadge({ isActive }) {
 }
 
 function Departments() {
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin')
+  const canManage = can('departments.manage')
 
   const [departments, setDepartments] = useState([])
   const [error, setError] = useState('')

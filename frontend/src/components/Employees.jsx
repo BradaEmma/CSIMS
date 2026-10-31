@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import EmployeeModal from './EmployeeModal'
 import ConfirmModal from './ConfirmModal'
@@ -18,8 +19,7 @@ function StatusBadge({ status }) {
 }
 
 function Employees() {
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin') || roles.includes('hr')
+  const canManage = can('employees.manage')
 
   const [employees, setEmployees] = useState([])
   const [error, setError] = useState('')

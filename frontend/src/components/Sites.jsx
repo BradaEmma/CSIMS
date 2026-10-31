@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import SiteModal from './SiteModal'
 import PostModal from './PostModal'
@@ -19,8 +20,7 @@ function StatusBadge({ status }) {
 }
 
 function Sites() {
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin') || roles.includes('manager')
+  const canManage = can('sites.manage')
 
   const [sites, setSites] = useState([])
   const [error, setError] = useState('')

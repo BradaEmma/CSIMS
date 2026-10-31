@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { can } from '../lib/can'
 import AppLayout from './AppLayout'
 import ContractModal from './ContractModal'
 import ConfirmModal from './ConfirmModal'
@@ -24,8 +25,7 @@ function formatCurrency(value) {
 }
 
 function Contracts() {
-  const roles = JSON.parse(localStorage.getItem('csims_roles') || '[]')
-  const canManage = roles.includes('admin')
+  const canManage = can('contracts.manage')
 
   const [contracts, setContracts] = useState([])
   const [error, setError] = useState('')
