@@ -6,7 +6,6 @@ import {
   CalendarDays,
   CheckSquare,
   AlertTriangle,
-  BarChart3,
   Wallet,
   CreditCard,
   MinusCircle,
@@ -39,8 +38,9 @@ const navGroups = [
   {
     label: 'Operations',
     items: [
-      { label: 'Clients', path: '/clients', icon: Briefcase, permission: 'clients.view' },
-      { label: 'Contracts', path: '/contracts', icon: FileText, permission: 'contracts.view' },
+      // Interim: admin only until department-based data scoping exists (permission matrix decides the final rule)
+      { label: 'Clients', path: '/clients', icon: Briefcase, roles: ['admin'] },
+      { label: 'Contracts', path: '/contracts', icon: FileText, roles: ['admin'] },
       { label: 'Sites', path: '/sites', icon: Building2, permission: 'sites.view', departments: ['operations'] },
       // Roster stays role-gated: roster.view is also held by 'supervisor'
       // per PermissionSeeder, but supervisor was never in this item's
@@ -50,7 +50,6 @@ const navGroups = [
       { label: 'Assignments', path: '/assignments', icon: UserPlus, permission: 'assignments.view', departments: ['operations'] },
       { label: 'Attendance', path: '/attendance', icon: CheckSquare, permission: 'attendance.view', departments: ['operations'] },
       { label: 'Incidents', path: '/incidents', icon: AlertTriangle, permission: 'incidents.view', departments: ['operations'] },
-      { label: 'Reports', path: '/reports', icon: BarChart3 },
     ],
   },
   {
