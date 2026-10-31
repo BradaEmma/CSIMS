@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\Position;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
@@ -167,7 +169,18 @@ class EmployeeController extends Controller
     public function destroy($id)
     {
         $employee = Employee::findOrFail($id);
-        $employee->delete();
+
+        // Read the file paths first; the rows are gone after the transaction
+        $paths = $employee->documents()->pluck('file_path')->all();
+
+        DB::transaction(function () use ($employee) {
+            $employee->documents()->delete();
+            $employee->delete();
+        });
+
+        // Remove the files only after the database delete has succeeded
+        Storage::disk('public')->delete($paths);
+
         return response()->json([
             'message' => 'Employee deleted successfully'
         ]);
