@@ -14,7 +14,6 @@ function GuardModal({ guard, onClose, onSaved }) {
     shift_type: guard?.shift_type || 'morning',
     site_id: guard?.site_id || '',
     status: guard?.status || 'active',
-    daily_rate: guard?.daily_rate || '',
     monthly_basic: guard?.monthly_basic || '',
     nssf_applicable: guard?.nssf_applicable ?? false,
     paye_applicable: guard?.paye_applicable ?? false,
@@ -44,7 +43,6 @@ function GuardModal({ guard, onClose, onSaved }) {
       national_id: form.national_id || null,
       shift_type: form.shift_type,
       site_id: form.site_id || null,
-      daily_rate: form.daily_rate ? Number(form.daily_rate) : null,
       monthly_basic: form.monthly_basic ? Number(form.monthly_basic) : null,
       nssf_applicable: form.nssf_applicable,
       paye_applicable: form.paye_applicable,
@@ -128,20 +126,6 @@ function GuardModal({ guard, onClose, onSaved }) {
               <option value="night">Night</option>
               <option value="either">Either</option>
             </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1">Daily Rate (TZS)</label>
-            <input
-              type="number"
-              min="0"
-              step="any"
-              name="daily_rate"
-              value={form.daily_rate}
-              onChange={handleChange}
-              placeholder="e.g. 15000"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-            />
           </div>
 
           <div>
